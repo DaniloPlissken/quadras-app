@@ -1,0 +1,5 @@
+Timer para usuário marcação
+
+Gerar relatório de agendamentos
+
+Um mesmo CPF pode marcar mais de uma modalidade desde que em horários diferentes - somente um por dia e por fim de semana
