@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Calendar } from '@/components/ui/calendar'
@@ -127,6 +128,8 @@ export default function ReservaModalidadePage() {
 
   useEffect(() => {
     async function carregarQuadras() {
+      if (modalidade === 'futebol') return
+
       const res = await fetch(`/api/quadras?modalidade=${modalidade}`)
       const data = await res.json()
 
@@ -142,6 +145,7 @@ export default function ReservaModalidadePage() {
 
   useEffect(() => {
     async function carregarReservas() {
+      if (modalidade === 'futebol') return
       if (!dataSelecionada || !quadraId) return
 
       const dataFormatada = dataSelecionada.toISOString().split('T')[0]
@@ -155,7 +159,7 @@ export default function ReservaModalidadePage() {
     }
 
     carregarReservas()
-  }, [dataSelecionada, quadraId])
+  }, [dataSelecionada, quadraId, modalidade])
 
   async function reservar(slot: string) {
     if (!dataSelecionada || !quadraId) return
@@ -199,6 +203,44 @@ export default function ReservaModalidadePage() {
   const usuarioJaReservouNesteFimDeSemana = reservas.some(
     (reserva) => reserva.userId === userId
   )
+
+  if (modalidade === 'futebol') {
+    return (
+      <main className="min-h-screen bg-slate-100 p-6">
+        <div className="mx-auto max-w-3xl">
+          <Card className="rounded-3xl">
+            <CardHeader>
+              <CardTitle className="text-3xl">
+                Agendamento de Futebol
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-4 text-slate-700">
+              <p className="text-lg font-semibold">
+                O agendamento de campos de futebol exige cadastro prévio do time.
+              </p>
+
+              <p>
+                Para reservar um campo, o responsável deverá estar vinculado a um
+                time cadastrado pela administração.
+              </p>
+
+              <p>
+                Esta funcionalidade será liberada em uma próxima etapa do sistema.
+              </p>
+
+              <Link
+                href="/reservas"
+                className="inline-flex rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+              >
+                Voltar para modalidades
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-slate-100 p-6">
