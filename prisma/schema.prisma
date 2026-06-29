@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReservaStatus {
+  CONFIRMADA
+  CANCELADA_ADMIN
+  CONCLUIDA
+}
+
+model User {
+  id       String    @id          // CPF como PK (sem formatação)
+  name     String
+  email    String    @unique
+  password String
+  role     Role      @default(USER)
+  reservas Reserva[]
+  times    Time[]
+}
+
+model Modalidade {
+  id      String   @id @default(cuid())
+  nome    String   @unique
+  quadras Quadra[]
+}
+
+model Quadra {
+  id           String     @id @default(cuid())
+  nome         String
+  modalidadeId String
+  modalidade   Modalidade @relation(fields: [modalidadeId], references: [id])
+  reservas     Reserva[]
+  agendas      Agenda[]
+
+  @@unique([nome, modalidadeId])
+}
+
+model Reserva {
+  id       String        @id @default(cuid())
+  userId   String
+  quadraId String
+  timeId   String?
+  data     DateTime
+  slot     String
+  status   ReservaStatus @default(CONFIRMADA)
+  quadra   Quadra        @relation(fields: [quadraId], references: [id])
+  user     User          @relation(fields: [userId], references: [id])
+  time     Time?         @relation(fields: [timeId], references: [id])
+
+  @@unique([data, slot, quadraId])
+}
+
+model Time {
+  id          String    @id @default(cuid())
+  nome        String    @unique
+  userId      String
+  responsavel User     @relation(fields: [userId], references: [id])
+  reservas    Reserva[]
+  createdAt   DateTime  @default(now())
+}
+
+model Agenda {
+  id       String   @id @default(cuid())
+  data     DateTime
+  quadraId String
+  quadra   Quadra   @relation(fields: [quadraId], references: [id])
+  horarios String[]
+
+  @@unique([data, quadraId])
+}

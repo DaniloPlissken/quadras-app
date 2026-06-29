@@ -1,0 +1,5 @@
+Kxi8d3oGN7GfRYpg
+
+Connection String
+
+postgresql://postgres:Kxi8d3oGN7GfRYpg@db.wicsgniuuozgtfkwroka.supabase.co:5432/postgres
