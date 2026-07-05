@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Calendar, Users, Map, Settings } from "lucide-react";
+import { LayoutDashboard, CalendarClock, Users, Map, Settings } from "lucide-react";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 
 export default async function AdminLayout({
@@ -40,25 +40,25 @@ export default async function AdminLayout({
             <li>
               <Link href="/admin/reservas" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
                 <Map className="w-5 h-5" />
-                <span>Gestão de Reservas</span>
+                <span>Agenda Semanal</span>
               </Link>
             </li>
             <li>
               <Link href="/admin/calendario" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <Calendar className="w-5 h-5" />
-                <span>Calendário</span>
+                <CalendarClock className="w-5 h-5" />
+                <span>Liberação de Horários</span>
               </Link>
             </li>
             <li>
               <Link href="/admin/quadras" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
                 <Settings className="w-5 h-5" />
-                <span>Quadras</span>
+                <span>Gestão de Quadras</span>
               </Link>
             </li>
             <li>
               <Link href="/admin/times" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
                 <Users className="w-5 h-5" />
-                <span>Times (Futebol)</span>
+                <span>Cadastro de Times</span>
               </Link>
             </li>
           </ul>
