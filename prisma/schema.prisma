@@ -25,7 +25,6 @@ model User {
   password String
   role     Role      @default(USER)
   reservas Reserva[]
-  times    Time[]
 }
 
 model Modalidade {
@@ -62,12 +61,27 @@ model Reserva {
 }
 
 model Time {
-  id          String    @id @default(cuid())
-  nome        String    @unique
-  userId      String
-  responsavel User     @relation(fields: [userId], references: [id])
-  reservas    Reserva[]
-  createdAt   DateTime  @default(now())
+  id           String             @id @default(cuid())
+  nome         String             @unique
+  responsaveis ResponsavelTime[]
+  reservas     Reserva[]
+  createdAt    DateTime           @default(now())
+}
+
+model ResponsavelTime {
+  id                    String   @id @default(cuid())
+  cpf                   String
+  nome                  String
+  telefone              String
+  comprovanteResidencia Boolean  @default(false)
+  urlComprovante        String?
+  antecedentesCriminais Boolean  @default(false)
+  urlAntecedentes       String?
+  apto                  Boolean  @default(false)
+  timeId                String
+  time                  Time     @relation(fields: [timeId], references: [id], onDelete: Cascade)
+
+  @@unique([cpf, timeId])
 }
 
 model Agenda {

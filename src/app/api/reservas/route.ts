@@ -142,6 +142,36 @@ export async function POST(req: Request) {
       )
     }
 
+    // Buscar a quadra para checar a modalidade
+    const quadra = await prisma.quadra.findUnique({
+      where: { id: quadraId },
+      include: { modalidade: true }
+    })
+
+    if (!quadra) {
+      return NextResponse.json(
+        { error: 'Quadra não encontrada' },
+        { status: 404 }
+      )
+    }
+
+    // Se a modalidade for Futebol, o usuário (CPF) precisa ser um responsável apto
+    if (quadra.modalidade.nome.toLowerCase() === 'futebol') {
+      const responsavelApto = await prisma.responsavelTime.findFirst({
+        where: {
+          cpf: userId,
+          apto: true
+        }
+      })
+
+      if (!responsavelApto) {
+        return NextResponse.json(
+          { error: 'Apenas responsáveis aptos de times validados podem reservar campos de futebol.' },
+          { status: 403 }
+        )
+      }
+    }
+
     const reserva = await prisma.reserva.create({
       data: {
         quadraId,

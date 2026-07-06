@@ -11,7 +11,7 @@ export async function GET() {
 
   const times = await prisma.time.findMany({
     include: {
-      responsavel: { select: { name: true, id: true, email: true } },
+      responsaveis: true,
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -27,36 +27,36 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { nome, cpfResponsavel } = body
+    const { nome, responsaveis } = body
 
-    if (!nome || !cpfResponsavel) {
+    if (!nome || !responsaveis || !Array.isArray(responsaveis) || responsaveis.length !== 2) {
       return NextResponse.json(
-        { error: 'Nome do time e CPF do responsável são obrigatórios.' },
+        { error: 'Nome do time e dois responsáveis são obrigatórios.' },
         { status: 400 }
       )
     }
 
-    const cpfLimpo = cpfResponsavel.replace(/\D/g, '')
-
-    // CPF é o id do User
-    const user = await prisma.user.findUnique({
-      where: { id: cpfLimpo },
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Nenhum usuário encontrado com esse CPF.' },
-        { status: 404 }
-      )
-    }
+    // Tratar CPF: manter apenas os números e mapear os dados corretamente
+    const responsaveisTratados = responsaveis.map((r: any) => ({
+      cpf: r.cpf.replace(/\D/g, ''),
+      nome: r.nome,
+      telefone: r.telefone,
+      comprovanteResidencia: r.comprovanteResidencia,
+      urlComprovante: r.urlComprovante,
+      antecedentesCriminais: r.antecedentesCriminais,
+      urlAntecedentes: r.urlAntecedentes,
+      apto: r.apto
+    }))
 
     const time = await prisma.time.create({
       data: {
         nome,
-        userId: user.id,
+        responsaveis: {
+          create: responsaveisTratados,
+        },
       },
       include: {
-        responsavel: { select: { name: true, id: true, email: true } },
+        responsaveis: true,
       },
     })
 
