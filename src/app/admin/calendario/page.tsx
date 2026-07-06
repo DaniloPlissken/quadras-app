@@ -106,8 +106,9 @@ export default function AdminCalendarioPage() {
       const res = await fetch('/api/admin/quadras')
       if (res.ok) {
         const data = await res.json()
-        setQuadras(data)
-        if (data.length > 0) setQuadraId(data[0].id)
+        const ativas = data.filter((q: any) => q.ativa !== false)
+        setQuadras(ativas)
+        if (ativas.length > 0) setQuadraId(ativas[0].id)
       }
     }
     carregarQuadras()

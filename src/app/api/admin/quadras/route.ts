@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { nome, modalidadeId } = body
+    const { nome, modalidadeId, ativa = true } = body
 
     if (!nome || !modalidadeId) {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     const quadra = await prisma.quadra.create({
-      data: { nome, modalidadeId },
+      data: { nome, modalidadeId, ativa },
       include: { modalidade: true },
     })
 
@@ -45,6 +45,44 @@ export async function POST(request: Request) {
     const message = error instanceof Error && error.message.includes('Unique')
       ? 'Já existe uma quadra com esse nome nessa modalidade.'
       : 'Erro ao criar quadra.'
+    return NextResponse.json({ error: message }, { status: 400 })
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { id, nome, modalidadeId, ativa } = body
+
+    if (!id || !nome || !modalidadeId) {
+      return NextResponse.json(
+        { error: 'ID, Nome e modalidade são obrigatórios.' },
+        { status: 400 }
+      )
+    }
+
+    const dataToUpdate: any = { nome, modalidadeId }
+    if (ativa !== undefined) {
+      dataToUpdate.ativa = ativa
+    }
+
+    const quadra = await prisma.quadra.update({
+      where: { id },
+      data: dataToUpdate,
+      include: { modalidade: true },
+    })
+
+    return NextResponse.json(quadra, { status: 200 })
+  } catch (error: unknown) {
+    console.error('Erro ao atualizar quadra:', error)
+    const message = error instanceof Error && error.message.includes('Unique')
+      ? 'Já existe uma quadra com esse nome nessa modalidade.'
+      : 'Erro ao atualizar quadra.'
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

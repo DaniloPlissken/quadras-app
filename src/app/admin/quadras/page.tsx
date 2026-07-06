@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 type Modalidade = {
   id: string
@@ -28,11 +29,14 @@ export default function AdminQuadrasPage() {
     if (!mod) return ''
 
     const quadrasDaModalidade = listaQuadras.filter(q => q.modalidade.id === modId)
+    const isFutebol = mod.nome === 'Futebol'
+    const prefixo = isFutebol ? 'Campo' : `Quadra de ${mod.nome}`
+    
     let numero = 1
-    while (quadrasDaModalidade.some(q => q.nome === `Quadra de ${mod.nome} ${numero}`)) {
+    while (quadrasDaModalidade.some(q => q.nome === `${prefixo} ${numero}`)) {
       numero++
     }
-    return `Quadra de ${mod.nome} ${numero}`
+    return `${prefixo} ${numero}`
   }
 
   function selecionarModalidade(modId: string) {
@@ -118,7 +122,7 @@ export default function AdminQuadrasPage() {
           }}
           className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95"
         >
-          <Plus className="w-5 h-5" /> Nova Quadra
+          <Plus className="w-5 h-5" /> Nova Quadra / Campo
         </button>
       </div>
 
@@ -126,13 +130,13 @@ export default function AdminQuadrasPage() {
       {showForm && (
         <form
           onSubmit={criarQuadra}
-          className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4"
+          className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 mb-6"
         >
-          <h2 className="text-lg font-bold text-slate-800">Cadastrar Nova Quadra</h2>
+          <h2 className="text-lg font-bold text-slate-800">Cadastrar Nova Quadra / Campo</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                Nome da Quadra
+                Nome da Quadra / Campo
               </label>
               <input
                 type="text"
@@ -179,45 +183,43 @@ export default function AdminQuadrasPage() {
         </form>
       )}
 
-      {/* Tabela */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        {quadras.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
-            Nenhuma quadra cadastrada ainda. Clique em "Nova Quadra" para começar.
-          </div>
-        ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <th className="p-4">Nome da Quadra</th>
-                <th className="p-4">Modalidade</th>
-                <th className="p-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
-              {quadras.map((quadra) => (
-                <tr key={quadra.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4 font-medium">{quadra.nome}</td>
-                  <td className="p-4">
-                    <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-semibold">
-                      {quadra.modalidade.nome}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => excluirQuadra(quadra.id, quadra.nome)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                      title="Excluir quadra"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {/* Tabela de Modalidades / Cards */}
+      {!showForm && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {modalidades.length === 0 ? (
+            <div className="col-span-full p-12 text-center text-slate-400 bg-white rounded-2xl shadow-sm border border-slate-200">
+              Nenhuma modalidade encontrada. Cadastre uma modalidade primeiro.
+            </div>
+          ) : (
+            modalidades.map((mod) => {
+              const count = quadras.filter(q => q.modalidade.id === mod.id).length
+              const isFutebol = mod.nome === 'Futebol'
+              const termoSingular = isFutebol ? 'campo cadastrado' : 'quadra cadastrada'
+              const termoPlural = isFutebol ? 'campos cadastrados' : 'quadras cadastradas'
+              const termoAcao = isFutebol ? 'Gerenciar campos' : 'Gerenciar quadras'
+              
+              return (
+                <Link
+                  key={mod.id}
+                  href={`/admin/quadras/${mod.id}`}
+                  className="group bg-white rounded-2xl shadow-sm hover:shadow-md border border-slate-200 hover:border-[#004B87] p-6 transition-all flex flex-col justify-between cursor-pointer active:scale-[0.98]"
+                >
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800 group-hover:text-[#004B87] transition-colors">{mod.nome}</h2>
+                    <p className="text-slate-500 mt-2 text-sm font-medium">
+                      {count} {count === 1 ? termoSingular : termoPlural}
+                    </p>
+                  </div>
+                  <div className="mt-6 flex items-center justify-between text-[#004B87] font-semibold text-sm">
+                    <span>{termoAcao}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              )
+            })
+          )}
+        </div>
+      )}
     </div>
   )
 }

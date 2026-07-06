@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     }
 
     const quadras = await prisma.quadra.findMany({
+      where: { ativa: true },
       include: { modalidade: true }
     })
 

@@ -37,6 +37,7 @@ model Modalidade {
 model Quadra {
   id           String     @id @default(cuid())
   nome         String
+  ativa        Boolean    @default(true)
   modalidadeId String
   modalidade   Modalidade @relation(fields: [modalidadeId], references: [id])
   reservas     Reserva[]
