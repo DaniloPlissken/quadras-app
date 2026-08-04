@@ -328,7 +328,7 @@ export default function AdminTimesPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {times.length === 0 ? (
           <div className="p-12 text-center text-slate-400">
-            Nenhum time cadastrado. Clique em "Cadastrar Time" para começar.
+            Nenhum time cadastrado. Clique em &quot;Cadastrar Time&quot; para começar.
           </div>
         ) : (
           <table className="w-full text-left border-collapse">
