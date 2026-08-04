@@ -38,6 +38,7 @@ export async function GET(request: Request) {
 
   const reservas = await prisma.reserva.findMany({
     where,
+    take: 200,
     include: {
       user: { select: { name: true, id: true, email: true } },
       quadra: { include: { modalidade: true } },

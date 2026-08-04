@@ -34,30 +34,31 @@ export async function GET(req: Request) {
   const dataBase = searchParams.get('dataBase')
   const quadraId = searchParams.get('quadraId')
 
-  if (!dataBase || !quadraId) {
-    return NextResponse.json({ error: 'dataBase e quadraId são obrigatórios' }, { status: 400 })
+  if (!dataBase) {
+    return NextResponse.json({ error: 'dataBase é obrigatório' }, { status: 400 })
   }
 
   const { inicio, fim } = getSemanaRange(dataBase)
 
+  const whereClause: any = {
+    data: {
+      gte: inicio,
+      lte: fim
+    }
+  }
+
+  if (quadraId) {
+    whereClause.quadraId = quadraId
+  }
+
   const agendas = await prisma.agenda.findMany({
-    where: {
-      quadraId,
-      data: {
-        gte: inicio,
-        lte: fim
-      }
-    },
+    where: whereClause,
     orderBy: { data: 'asc' }
   })
 
   const reservas = await prisma.reserva.findMany({
     where: {
-      quadraId,
-      data: {
-        gte: inicio,
-        lte: fim
-      },
+      ...whereClause,
       status: { not: 'CANCELADA_ADMIN' }
     },
     include: {

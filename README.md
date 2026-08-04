@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏟️ Quadras App - Sistema de Gestão e Reserva de Quadras (FUTEL)
 
-## Getting Started
+Sistema completo para agendamento, gestão de quadras poliesportivas, cadastro e aprovação de times e emissão de agenda semanal para administração pública / complexos esportivos.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Tecnologias
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) + React 19 + TypeScript
+- **Banco de Dados & ORM**: PostgreSQL via [Supabase](https://supabase.com/) + [Prisma ORM](https://www.prisma.io/)
+- **Estilização**: Tailwind CSS v4 + Radix UI + Lucide Icons + Sonner (Toasts)
+- **Autenticação**: NextAuth.js com Credentials Provider & Hash bcryptjs
+
+---
+
+## 📦 Estrutura do Projeto
+
+```
+├── prisma/
+│   └── schema.prisma         # Modelagem do banco (User, Reserva, Quadra, Modalidade, Time, Agenda)
+├── src/
+│   ├── app/
+│   │   ├── (public)/         # Páginas públicas (Home, Login, Cadastro, Reservas por Modalidade)
+│   │   ├── admin/            # Painel Administrativo (Dashboard, Quadras, Calendário, Agenda Semanal, Times)
+│   │   └── api/              # Rotas de API (NextAuth, Reservas, Quadras, Agenda, Admin)
+│   ├── components/           # Componentes reutilizáveis de UI e layout
+│   └── lib/                  # Configurações de Prisma e NextAuth
+├── seed-modalidades.js       # Seed inicial de modalidades
+├── seed-quadras.js           # Seed completo com quadras, agendas, times e usuário teste
+└── create-admin.js           # Criação do usuário administrador
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Como Rodar Localmente
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Clonar o repositório e instalar dependências:
+```bash
+git clone <url-do-repositorio>
+cd quadras-app
+npm install
+```
 
-## Learn More
+### 2. Configurar Variáveis de Ambiente:
+Crie um arquivo `.env` na raiz baseado no `.env.example`:
+```env
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[SENHA]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[SENHA]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
+NEXTAUTH_SECRET="minha-chave-secreta-segura-123"
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Sincronizar o Banco de Dados e Rodar Seeds:
+```bash
+# Criação das tabelas no banco
+npx prisma db push
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Criar admin padrão e dados de teste
+node create-admin.js
+node seed-quadras.js
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Executar em Desenvolvimento:
+```bash
+npm run dev
+```
+Acesse: [http://localhost:3000](http://localhost:3000)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔑 Credenciais Padrão para Testes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Perfil | E-mail / Identificador | CPF | Senha |
+| :--- | :--- | :--- | :--- |
+| **Administrador** | `admin@futel.mg.gov.br` | `admin` | `123456` |
+| **Cidadão / Usuário Teste** | `cidadao@teste.com` | `12345678900` | `123456` |
+
+---
+
+## 📋 Funcionalidades Principais
+
+- **Portal do Cidadão**:
+  - Cadastro obrigatório com validação de CPF como identificador único.
+  - Agendamento de horários por modalidade esportiva (Futebol, Vôlei, Beach Tênis, Tênis).
+  - Trava de reservas com base em regras de documentação e time ativo.
+
+- **Painel Administrativo (`/admin`)**:
+  - **Dashboard**: Métricas em tempo real (reservas de hoje, cancelamentos, total de times e quadras).
+  - **Gestão de Quadras**: Ativação, desativação e criação de quadras por modalidade.
+  - **Calendário & Liberação de Horários**: Liberação de dias abertos e grades personalizadas.
+  - **Agenda Semanal (Grid Time-Sheet)**: Visualização consolidada por modalidade com suporte nativo a impressão/relatório.
+  - **Gestão de Times**: Análise de documentos (comprovante de residência e antecedentes criminais) e aprovação de aptidão para reserva.
