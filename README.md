@@ -66,6 +66,15 @@ npm run dev
 ```
 Acesse: [http://localhost:3000](http://localhost:3000)
 
+### 5. Verificação de Qualidade e Build:
+```bash
+# Análise de lint e tipagem
+npm run lint
+
+# Build de produção
+npm run build
+```
+
 ---
 
 ## 🔑 Credenciais Padrão para Testes
