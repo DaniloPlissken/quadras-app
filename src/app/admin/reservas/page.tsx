@@ -30,8 +30,24 @@ export default function AdminReservasPage() {
   }
 
   useEffect(() => {
-    carregarReservas()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    let ignore = false
+    async function carregar() {
+      setCarregando(true)
+      const params = new URLSearchParams()
+      if (filtroData) params.set('data', filtroData)
+
+      const res = await fetch(`/api/admin/reservas?${params.toString()}`)
+      if (res.ok && !ignore) {
+        setReservas(await res.json())
+      }
+      if (!ignore) {
+        setCarregando(false)
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
   }, [filtroData])
 
   async function cancelarReserva(id: string) {

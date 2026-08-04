@@ -57,7 +57,17 @@ export default function AdminTimesPage() {
   }
 
   useEffect(() => {
-    carregarTimes()
+    let ignore = false
+    async function carregar() {
+      const res = await fetch('/api/admin/times')
+      if (res.ok && !ignore) {
+        setTimes(await res.json())
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
   }, [])
 
   function formatarCPFinput(value: string) {

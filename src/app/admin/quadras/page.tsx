@@ -49,25 +49,34 @@ export default function AdminQuadrasPage() {
       fetch('/api/admin/quadras'),
       fetch('/api/admin/modalidades'),
     ])
-    let quadrasCarregadas: Quadra[] = []
-    let modsCarregadas: Modalidade[] = []
-
-    if (resQ.ok) {
-      quadrasCarregadas = await resQ.json()
-      setQuadras(quadrasCarregadas)
-    }
+    if (resQ.ok) setQuadras(await resQ.json())
     if (resM.ok) {
-      modsCarregadas = await resM.json()
-      setModalidades(modsCarregadas)
-      if (modsCarregadas.length > 0 && !modalidadeId) {
-        setModalidadeId(modsCarregadas[0].id)
-      }
+      const mods = await resM.json()
+      setModalidades(mods)
+      setModalidadeId(prev => prev || (mods.length > 0 ? mods[0].id : ''))
     }
   }
 
   useEffect(() => {
-    carregarDados()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    let ignore = false
+    async function carregar() {
+      const [resQ, resM] = await Promise.all([
+        fetch('/api/admin/quadras'),
+        fetch('/api/admin/modalidades'),
+      ])
+      if (!ignore) {
+        if (resQ.ok) setQuadras(await resQ.json())
+        if (resM.ok) {
+          const mods = await resM.json()
+          setModalidades(mods)
+          setModalidadeId(prev => prev || (mods.length > 0 ? mods[0].id : ''))
+        }
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
   }, [])
 
   async function criarQuadra(e: React.FormEvent) {

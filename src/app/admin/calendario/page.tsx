@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -68,7 +68,6 @@ export default function AdminCalendarioPage() {
   const [quadraId, setQuadraId] = useState('')
   const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>(new Date())
   const [agendas, setAgendas] = useState<Agenda[]>([])
-  const [agendaDoDia, setAgendaDoDia] = useState<Agenda | null>(null)
   const [horariosEditando, setHorariosEditando] = useState<string[]>([])
   const [salvando, setSalvando] = useState(false)
   const [novoSlot, setNovoSlot] = useState('')
@@ -84,6 +83,12 @@ export default function AdminCalendarioPage() {
 
   const quadraSelecionada = quadras.find(q => q.id === quadraId)
   const ehTenis = quadraSelecionada?.modalidade.nome === 'Tênis'
+
+  const agendaDoDia = useMemo(() => {
+    if (!dataSelecionada || !quadraId) return null
+    const str = formatarDataLocal(dataSelecionada)
+    return agendas.find(a => a.data.split('T')[0] === str) || null
+  }, [dataSelecionada, quadraId, agendas])
 
   const isSemanaAberta = useMemo(() => {
     if (!loteDataBase || resumo.length === 0) return false
@@ -102,53 +107,77 @@ export default function AdminCalendarioPage() {
   }, [loteDataBase, resumo])
 
   useEffect(() => {
+    let ignore = false
     async function carregarQuadras() {
       const res = await fetch('/api/admin/quadras')
-      if (res.ok) {
+      if (res.ok && !ignore) {
         const data = await res.json()
-        const ativas = data.filter((q: any) => q.ativa !== false)
+        const ativas = data.filter((q: { ativa?: boolean }) => q.ativa !== false)
         setQuadras(ativas)
-        if (ativas.length > 0) setQuadraId(ativas[0].id)
+        if (ativas.length > 0) setQuadraId(prev => prev || ativas[0].id)
       }
     }
     carregarQuadras()
+    return () => {
+      ignore = true
+    }
   }, [])
 
-  const carregarAgendas = useCallback(async () => {
+  useEffect(() => {
+    if (!quadraId) return
+    let ignore = false
+    async function carregar() {
+      const res = await fetch(`/api/agenda?quadraId=${quadraId}&t=${Date.now()}`)
+      if (res.ok && !ignore) {
+        const data: Agenda[] = await res.json()
+        setAgendas(data)
+        if (dataSelecionada) {
+          const str = formatarDataLocal(dataSelecionada)
+          const enc = data.find(a => a.data.split('T')[0] === str)
+          setHorariosEditando(enc?.horarios || [])
+        }
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
+  }, [quadraId, dataSelecionada])
+
+  useEffect(() => {
+    let ignore = false
+    async function carregar() {
+      const res = await fetch(`/api/admin/agenda/resumo?t=${Date.now()}`)
+      if (res.ok && !ignore) {
+        setResumo(await res.json())
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  async function carregarAgendas() {
     if (!quadraId) return
     const res = await fetch(`/api/agenda?quadraId=${quadraId}&t=${Date.now()}`)
     if (res.ok) {
-      const data = await res.json()
+      const data: Agenda[] = await res.json()
       setAgendas(data)
+      if (dataSelecionada) {
+        const str = formatarDataLocal(dataSelecionada)
+        const enc = data.find(a => a.data.split('T')[0] === str)
+        setHorariosEditando(enc?.horarios || [])
+      }
     }
-  }, [quadraId])
+  }
 
-  const carregarResumo = useCallback(async () => {
+  async function carregarResumo() {
     const res = await fetch(`/api/admin/agenda/resumo?t=${Date.now()}`)
     if (res.ok) {
       setResumo(await res.json())
     }
-  }, [])
-
-  useEffect(() => {
-    carregarAgendas()
-  }, [carregarAgendas])
-
-  useEffect(() => {
-    carregarResumo()
-  }, [carregarResumo])
-
-  useEffect(() => {
-    if (!dataSelecionada || !quadraId) {
-      setAgendaDoDia(null)
-      setHorariosEditando([])
-      return
-    }
-    const str = formatarDataLocal(dataSelecionada)
-    const encontrada = agendas.find(a => a.data.split('T')[0] === str)
-    setAgendaDoDia(encontrada || null)
-    setHorariosEditando(encontrada?.horarios || [])
-  }, [dataSelecionada, agendas, quadraId])
+  }
 
   async function salvarAgenda() {
     if (!dataSelecionada || !quadraId) return
