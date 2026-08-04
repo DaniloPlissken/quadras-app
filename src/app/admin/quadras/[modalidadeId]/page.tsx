@@ -51,7 +51,7 @@ export default function ModalidadeQuadrasPage() {
       ])
       if (resQ.ok) setQuadras(await resQ.json())
       if (resM.ok) setModalidades(await resM.json())
-    } catch (e) {
+    } catch {
       toast.error('Erro ao carregar dados')
     } finally {
       setLoading(false)
@@ -60,7 +60,6 @@ export default function ModalidadeQuadrasPage() {
 
   useEffect(() => {
     if (modalidadeId) carregarDados()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalidadeId])
 
   function abrirModal(quadra: Quadra) {

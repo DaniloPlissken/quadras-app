@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Trash2, Loader2, ArrowRight } from 'lucide-react'
+import { Plus, Loader2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 type Modalidade = {
@@ -93,18 +93,6 @@ export default function AdminQuadrasPage() {
     }
   }
 
-  async function excluirQuadra(id: string, nomeQuadra: string) {
-    if (!confirm(`Tem certeza que deseja excluir "${nomeQuadra}"?`)) return
-
-    const res = await fetch(`/api/admin/quadras?id=${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      toast.success('Quadra excluída!')
-      carregarDados()
-    } else {
-      const err = await res.json()
-      toast.error(err.error || 'Erro ao excluir.')
-    }
-  }
 
   return (
     <div className="p-8 space-y-6">

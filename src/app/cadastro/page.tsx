@@ -19,7 +19,8 @@ export default function CadastroPage() {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
     
     // Máscara de CPF
     if (name === 'cpf') {

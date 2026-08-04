@@ -140,7 +140,7 @@ export default function AdminTimesPage() {
         const err = await res.json()
         toast.error(err.error || 'Erro ao cadastrar time.')
       }
-    } catch (error) {
+    } catch {
       toast.error('Erro ao processar arquivos ou salvar time.')
     } finally {
       setSalvando(false)
