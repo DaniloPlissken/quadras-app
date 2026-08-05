@@ -1,10 +1,10 @@
-# 🏟️ Quadras App - Sistema de Gestão e Reserva de Quadras (FUTEL)
+# Quadras App - Sistema de Gestão e Reserva de Quadras (FUTEL)
 
 Sistema completo para agendamento, gestão de quadras poliesportivas, cadastro e aprovação de times e emissão de agenda semanal para administração pública / complexos esportivos.
 
 ---
 
-## 🚀 Tecnologias
+## Tecnologias
 
 - **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) + React 19 + TypeScript
 - **Banco de Dados & ORM**: PostgreSQL via [Supabase](https://supabase.com/) + [Prisma ORM](https://www.prisma.io/)
@@ -13,7 +13,7 @@ Sistema completo para agendamento, gestão de quadras poliesportivas, cadastro e
 
 ---
 
-## 📦 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 ├── prisma/
@@ -32,7 +32,7 @@ Sistema completo para agendamento, gestão de quadras poliesportivas, cadastro e
 
 ---
 
-## 🛠️ Como Rodar Localmente
+## Como Rodar Localmente
 
 ### 1. Clonar o repositório e instalar dependências:
 ```bash
@@ -77,7 +77,7 @@ npm run build
 
 ---
 
-## 🔑 Credenciais Padrão para Testes
+## Credenciais Padrão para Testes
 
 | Perfil | E-mail / Identificador | CPF | Senha |
 | :--- | :--- | :--- | :--- |
@@ -86,7 +86,7 @@ npm run build
 
 ---
 
-## 📋 Funcionalidades Principais
+## Funcionalidades Principais
 
 - **Portal do Cidadão**:
   - Cadastro obrigatório com validação de CPF como identificador único.
