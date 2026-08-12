@@ -1,3 +1,6 @@
+import { getServerSession } from 'next-auth'
+import { redirect } from 'next/navigation'
+import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
 import { MapPin } from 'lucide-react'
 import { MdSportsVolleyball, MdSportsTennis, MdSportsSoccer, MdWbSunny } from 'react-icons/md'
@@ -47,7 +50,12 @@ const modalidades = [
   },
 ]
 
-export default function ReservasPage() {
+export default async function ReservasPage() {
+  const session = await getServerSession(authOptions)
+
+  if (!session) {
+    redirect('/login')
+  } 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8">
       <div className="mx-auto max-w-6xl">

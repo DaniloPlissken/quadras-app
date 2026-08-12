@@ -52,7 +52,7 @@ export default function ReservaModalidadePage() {
   const params = useParams()
   const router = useRouter()
   const modalidade = String(params.modalidade)
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
   const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>(new Date())
 
@@ -112,6 +112,12 @@ export default function ReservaModalidadePage() {
     carregarReservas()
   }, [dataSelecionada, quadraId, modalidade])
 
+  useEffect(() => {
+  if (status === 'unauthenticated') {
+    router.replace('/login')
+    }
+  }, [status, router])
+
   async function reservar(slot: string, emailConfirmacao: string) {
     if (!userId) {
       toast.error('Você precisa estar logado para reservar.')
@@ -134,8 +140,7 @@ export default function ReservaModalidadePage() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        quadraId,
-        userId,
+        quadraId,        
         data: dataFormatada,
         slot,
         emailConfirmacao,
@@ -172,6 +177,18 @@ export default function ReservaModalidadePage() {
     : undefined
 
   const slotsAtuais = agendaDoDia?.horarios || []
+
+  if (status === 'loading') {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-slate-50">
+      <p className="text-slate-600">Carregando...</p>
+    </main>
+  )
+}
+
+if (!session) {
+  return null
+}
 
   if (modalidade === 'futebol') {
     return (

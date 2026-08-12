@@ -1,5 +1,8 @@
+
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 /**
  * Cria uma Date UTC midnight a partir de "YYYY-MM-DD", evitando deslocamento de timezone.
@@ -68,9 +71,20 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const { quadraId, userId, data, slot } = body
+    const session = await getServerSession(authOptions)
 
-    if (!quadraId || !userId || !data || !slot) {
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Usuário não autenticado.' },
+        { status: 401 }
+      )
+    }
+
+    const userId = session.user.id
+
+    const { quadraId, data, slot } = body
+
+    if (!quadraId || !data || !slot) {
       return NextResponse.json(
         { error: 'Dados incompletos' },
         { status: 400 }
