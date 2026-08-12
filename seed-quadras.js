@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -34,27 +35,47 @@ const SLOTS_TENIS = [
 ];
 
 async function main() {
-  console.log('🚀 Iniciando população do banco de dados...\n');
+  console.log('Iniciando população do banco de dados...\n');
 
   // 1. Modalidades e suas respectivas Quadras
   const modalidadesComQuadras = [
-    {
-      nome: 'Futebol',
-      quadras: ['Campo Society 1', 'Campo Society 2', 'Campo Oficial Sintético'],
-    },
-    {
-      nome: 'Vôlei',
-      quadras: ['Quadra Poliesportiva 1 (Vôlei)', 'Quadra de Areia 1'],
-    },
-    {
-      nome: 'Beach Tênis',
-      quadras: ['Quadra Beach Tênis 1', 'Quadra Beach Tênis 2'],
-    },
-    {
-      nome: 'Tênis',
-      quadras: ['Quadra de Saibro 1', 'Quadra Rápida 1'],
-    },
-  ];
+  {
+    nome: 'Vôlei',
+    quadras: [
+      'Quadra 1',
+      'Quadra 2',
+      'Quadra 3',
+      'Quadra 4',
+    ],
+  },
+  {
+    nome: 'Beach Tênis',
+    quadras: [
+      'Quadra 1',
+      'Quadra 2',
+      'Quadra 3',
+      'Quadra 4',
+      'Quadra 5',
+    ],
+  },
+  {
+    nome: 'Tênis',
+    quadras: [
+      'Quadra 1',
+    ],
+  },
+  {
+    nome: 'Futebol',
+    quadras: [
+      'Campo 1',
+      'Campo 2',
+      'Campo 3',
+      'Campo 4',
+      'Campo 5',
+      'Campo 6',
+    ],
+  },
+];
 
   const todasQuadras = [];
 
@@ -64,7 +85,7 @@ async function main() {
       update: {},
       create: { nome: item.nome },
     });
-    console.log(`📌 Modalidade: ${modalidade.nome}`);
+    console.log(`Modalidade: ${modalidade.nome}`);
 
     for (const nomeQuadra of item.quadras) {
       const quadra = await prisma.quadra.upsert({
@@ -82,12 +103,12 @@ async function main() {
         },
       });
       todasQuadras.push({ ...quadra, modalidadeNome: modalidade.nome });
-      console.log(`   └─ 🏟️ Quadra criada/atualizada: ${quadra.nome}`);
+      console.log(`Quadra criada/atualizada: ${quadra.nome}`);
     }
   }
 
   // 2. Gerar Agendas para os próximos 14 dias (incluindo hoje)
-  console.log('\n📅 Gerando agendas/horários disponíveis para os próximos 14 dias...');
+  console.log('\nGerando agendas/horários disponíveis para os próximos 14 dias...');
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
@@ -125,10 +146,10 @@ async function main() {
     }
   }
 
-  console.log(`✅ ${totalAgendasCriadas} registros de agenda criados/atualizados com sucesso!`);
+  console.log(`${totalAgendasCriadas} registros de agenda criados/atualizados com sucesso!`);
 
   // 3. Criar Usuário Comum para testes
-  console.log('\n👤 Criando usuário comum para testes...');
+  console.log('\nCriando usuário comum para testes...');
   const senhaHash = await bcrypt.hash('123456', 10);
   const usuarioTeste = await prisma.user.upsert({
     where: { email: 'cidadao@teste.com' },
@@ -143,10 +164,10 @@ async function main() {
       role: 'USER',
     },
   });
-  console.log(`✅ Usuário criado: ${usuarioTeste.name} (${usuarioTeste.email} / CPF: ${usuarioTeste.id}) - Senha: 123456`);
+  console.log(`Usuário criado: ${usuarioTeste.name} (${usuarioTeste.email} / CPF: ${usuarioTeste.id}) - Senha: 123456`);
 
   // 4. Criar um Time de exemplo com responsável
-  console.log('\n⚽ Criando time de teste...');
+  console.log('\nCriando time de teste...');
   const timeTeste = await prisma.time.upsert({
     where: { nome: 'Os Galáticos FC' },
     update: {},
@@ -164,14 +185,14 @@ async function main() {
       },
     },
   });
-  console.log(`✅ Time criado: ${timeTeste.nome}`);
+  console.log(`Time criado: ${timeTeste.nome}`);
 
-  console.log('\n🎉 Banco de dados populado com sucesso e pronto para testes!');
+  console.log('\nBanco de dados populado com sucesso e pronto para testes!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Erro ao popular banco:', e);
+    console.error('Erro ao popular banco:', e);
     process.exit(1);
   })
   .finally(async () => {

@@ -178,7 +178,7 @@ export default function ReservaModalidadePage() {
       <main className="min-h-screen bg-slate-100 p-6">
         <div className="mx-auto max-w-3xl">
           <Card className="rounded-3xl border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-emerald-600 to-emerald-800 rounded-t-3xl text-white">
+            <CardHeader className="bg-linear-to-r from-emerald-600 to-emerald-800 rounded-t-3xl text-white">
               <CardTitle className="text-3xl">
                 Agendamento de Futebol
               </CardTitle>
