@@ -53,12 +53,13 @@ model Reserva {
   timeId   String?
   data     DateTime
   slot     String
-  status   ReservaStatus @default(CONFIRMADA)
-  quadra   Quadra        @relation(fields: [quadraId], references: [id])
-  user     User          @relation(fields: [userId], references: [id])
-  time     Time?         @relation(fields: [timeId], references: [id])
+  status      ReservaStatus @default(CONFIRMADA)
+  cancelToken String        @default("")
+  quadra      Quadra        @relation(fields: [quadraId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  time        Time?         @relation(fields: [timeId], references: [id])
 
-  @@unique([data, slot, quadraId])
+  @@unique([data, slot, quadraId, cancelToken])
   @@index([quadraId, data])
 }
 

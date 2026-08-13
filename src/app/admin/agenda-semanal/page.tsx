@@ -6,8 +6,10 @@ import { Printer, Loader2 } from 'lucide-react'
 type Quadra = {
   id: string
   nome: string
+  ativa?: boolean
   modalidade: { id: string; nome: string }
 }
+
 
 type Agenda = {
   id: string
@@ -86,8 +88,8 @@ export default function ReservasMatrixPage() {
     async function carregarQuadras() {
       const res = await fetch('/api/admin/quadras')
       if (res.ok) {
-        const data = await res.json()
-        const ativas = data.filter((q: any) => q.ativa !== false)
+        const data: Quadra[] = await res.json()
+        const ativas = data.filter((q: Quadra) => q.ativa !== false)
         setQuadras(ativas)
       }
     }

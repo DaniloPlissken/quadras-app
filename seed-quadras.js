@@ -149,8 +149,9 @@ async function main() {
   console.log(`${totalAgendasCriadas} registros de agenda criados/atualizados com sucesso!`);
 
   // 3. Criar Usuário Comum para testes
-  console.log('\nCriando usuário comum para testes...');
-  const senhaHash = await bcrypt.hash('123456', 10);
+  console.log('\n👤 Criando usuário comum para testes...');
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Futel@Staging123';
+  const senhaHash = await bcrypt.hash(adminPassword, 10);
   const usuarioTeste = await prisma.user.upsert({
     where: { email: 'cidadao@teste.com' },
     update: {
@@ -164,7 +165,7 @@ async function main() {
       role: 'USER',
     },
   });
-  console.log(`Usuário criado: ${usuarioTeste.name} (${usuarioTeste.email} / CPF: ${usuarioTeste.id}) - Senha: 123456`);
+  console.log(`✅ Usuário criado: ${usuarioTeste.name} (${usuarioTeste.email} / CPF: ${usuarioTeste.id}) - Senha: [configurada na env ADMIN_PASSWORD]`);
 
   // 4. Criar um Time de exemplo com responsável
   console.log('\nCriando time de teste...');

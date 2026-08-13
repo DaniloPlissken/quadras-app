@@ -21,7 +21,7 @@ export default function CadastroPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
     let { value } = e.target;
-    
+
     // Máscara de CPF
     if (name === 'cpf') {
       value = value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
@@ -49,8 +49,9 @@ export default function CadastroPage() {
 
       toast.success('Cadastro realizado com sucesso!');
       router.push('/login');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao realizar cadastro';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -65,10 +66,10 @@ export default function CadastroPage() {
             Preencha seus dados para ter acesso às reservas das quadras da FUTEL.
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="pt-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            
+
             {/* DADOS PESSOAIS */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-[#004B87] font-semibold text-lg border-b pb-2">
@@ -99,8 +100,8 @@ export default function CadastroPage() {
               <Link href="/login" className="text-slate-600 hover:text-[#004B87] font-medium transition-colors">
                 Já possuo cadastro
               </Link>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={loading}
                 className="w-full sm:w-auto px-8 bg-[#009A44] hover:bg-[#007f38] text-white font-bold h-12 text-lg"
               >

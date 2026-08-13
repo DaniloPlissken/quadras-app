@@ -68,7 +68,10 @@ export async function PATCH(request: Request) {
 
     const reserva = await prisma.reserva.update({
       where: { id },
-      data: { status },
+      data: { 
+        status,
+        cancelToken: status === 'CANCELADA_ADMIN' ? id : ""
+      },
     })
 
     return NextResponse.json(reserva)

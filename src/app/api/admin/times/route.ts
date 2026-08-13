@@ -3,6 +3,17 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+interface ResponsavelInput {
+  cpf: string
+  nome: string
+  telefone: string
+  comprovanteResidencia?: boolean
+  urlComprovante?: string | null
+  antecedentesCriminais?: boolean
+  urlAntecedentes?: string | null
+  apto?: boolean
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== 'ADMIN') {
@@ -37,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // Tratar CPF: manter apenas os números e mapear os dados corretamente
-    const responsaveisTratados = responsaveis.map((r: any) => ({
+    const responsaveisTratados = (responsaveis as ResponsavelInput[]).map((r: ResponsavelInput) => ({
       cpf: r.cpf.replace(/\D/g, ''),
       nome: r.nome,
       telefone: r.telefone,
@@ -90,7 +101,7 @@ export async function DELETE(request: Request) {
     await prisma.time.delete({ where: { id } })
 
     return NextResponse.json({ ok: true })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro ao remover time:', error)
     return NextResponse.json(
       { error: 'Erro ao remover time' },

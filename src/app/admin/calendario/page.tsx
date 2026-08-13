@@ -9,8 +9,10 @@ import { Plus, Trash2, CalendarPlus, Clock, Loader2, X, ChevronDown } from 'luci
 type Quadra = {
   id: string
   nome: string
+  ativa?: boolean
   modalidade: { id: string; nome: string }
 }
+
 
 type Agenda = {
   id: string
@@ -111,8 +113,8 @@ export default function AdminCalendarioPage() {
     async function carregarQuadras() {
       const res = await fetch('/api/admin/quadras')
       if (res.ok && !ignore) {
-        const data = await res.json()
-        const ativas = data.filter((q: { ativa?: boolean }) => q.ativa !== false)
+        const data: Quadra[] = await res.json()
+        const ativas = data.filter((q: Quadra) => q.ativa !== false)
         setQuadras(ativas)
         if (ativas.length > 0) setQuadraId(prev => prev || ativas[0].id)
       }

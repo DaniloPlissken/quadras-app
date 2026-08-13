@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-require-imports */  
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash('123456', 10);
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Futel@Staging123';
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
   
   const admin = await prisma.user.upsert({
     where: { email: 'admin@futel.mg.gov.br' },
