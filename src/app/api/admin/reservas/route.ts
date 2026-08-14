@@ -18,30 +18,52 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const dataFiltro = searchParams.get('data')
+  const dataInicioStr = searchParams.get('dataInicio')
+  const dataFimStr = searchParams.get('dataFim')
   const quadraIdFiltro = searchParams.get('quadraId')
+  const modalidadeFiltro = searchParams.get('modalidade')
+  const statusFiltro = searchParams.get('status')
 
-  const where: Record<string, unknown> = {
-    status: { not: 'CANCELADA_ADMIN' },
+  const where: Prisma.ReservaWhereInput = {}
+
+  if (statusFiltro && statusFiltro !== 'todas') {
+    where.status = statusFiltro
+  } else {
+    // Se não especificar status, podemos trazer apenas as ativas ou todas? 
+    // Por padrão (legado), vamos excluir as canceladas a menos que o status seja explicitamente selecionado.
+    where.status = { not: 'CANCELADA_ADMIN' }
   }
 
-  if (dataFiltro) {
-    const data = parseDataUTC(dataFiltro)
-    const fimDoDia = new Date(data)
-    fimDoDia.setUTCHours(23, 59, 59, 999)
-    where.data = { gte: data, lte: fimDoDia }
+  if (dataInicioStr || dataFimStr) {
+    const dataRange: Prisma.DateTimeFilter = {}
+    if (dataInicioStr) {
+      dataRange.gte = parseDataUTC(dataInicioStr)
+    }
+    if (dataFimStr) {
+      const dFim = parseDataUTC(dataFimStr)
+      dFim.setUTCHours(23, 59, 59, 999)
+      dataRange.lte = dFim
+    }
+    where.data = dataRange
   }
 
-  if (quadraIdFiltro) {
+  if (quadraIdFiltro && quadraIdFiltro !== 'todas') {
     where.quadraId = quadraIdFiltro
+  }
+
+  if (modalidadeFiltro && modalidadeFiltro !== 'todas') {
+    where.quadra = {
+      ...(where.quadra || {}),
+      modalidade: { nome: modalidadeFiltro }
+    }
   }
 
   const reservas = await prisma.reserva.findMany({
     where,
-    take: 200,
     include: {
-      user: { select: { name: true, id: true, email: true } },
+      user: { select: { name: true, email: true } }, // Sem 'id' para proteger CPF
       quadra: { include: { modalidade: true } },
+      time: { include: { responsaveis: true } }
     },
     orderBy: [{ data: 'desc' }, { slot: 'asc' }],
   })
