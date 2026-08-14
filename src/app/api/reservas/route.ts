@@ -53,6 +53,9 @@ export async function GET(req: Request) {
   const fimDoDia = new Date(dataConsulta)
   fimDoDia.setUTCHours(23, 59, 59, 999)
 
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.id
+
   const reservas = await prisma.reserva.findMany({
     where: {
       quadraId,
@@ -62,9 +65,23 @@ export async function GET(req: Request) {
       },
       status: { not: 'CANCELADA_ADMIN' },
     },
+    select: {
+      id: true,
+      data: true,
+      slot: true,
+      status: true,
+      quadraId: true,
+      userId: true, // we select it here to check it, but will omit it below if not the user
+    }
   })
 
-  return NextResponse.json(reservas)
+  // Não expor CPF (userId) publicamente, apenas para o próprio dono da reserva
+  const reservasTratadas = reservas.map(reserva => ({
+    ...reserva,
+    userId: reserva.userId === userId ? userId : undefined
+  }))
+
+  return NextResponse.json(reservasTratadas)
 }
 
 export async function POST(req: Request) {
@@ -92,6 +109,19 @@ export async function POST(req: Request) {
     }
 
     const dataReserva = parseDataUTC(data)
+
+    // Validar: não permitir datas passadas
+    const agora = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
+    const dataAtualStr = formatter.format(agora)
+    const hojeUTC = parseDataUTC(dataAtualStr)
+
+    if (dataReserva < hojeUTC) {
+      return NextResponse.json(
+        { error: 'Não é possível realizar reservas em datas passadas.' },
+        { status: 400 }
+      )
+    }
 
     // Validar: existe Agenda para esta data + quadra?
     const agenda = await prisma.agenda.findUnique({
