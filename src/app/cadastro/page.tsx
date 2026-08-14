@@ -32,6 +32,18 @@ export default function CadastroPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.password.trim().length === 0) {
+      toast.error('A senha não pode ser vazia ou composta apenas por espaços.');
+      return;
+    }
+
+    const tamanhoEmBytes = new Blob([formData.password]).size;
+    if (tamanhoEmBytes > 72) {
+      toast.error('Sua senha excedeu o limite máximo de 72 bytes (caracteres especiais ocupam mais espaço).');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -91,7 +103,8 @@ export default function CadastroPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Senha *</Label>
-                  <Input type="password" name="password" value={formData.password} onChange={handleChange} required minLength={6} />
+                  <Input type="password" name="password" value={formData.password} onChange={handleChange} required minLength={6} maxLength={72} />
+                  <p className="text-xs text-slate-500">Máximo de 72 bytes permitidos.</p>
                 </div>
               </div>
             </div>

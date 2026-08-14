@@ -37,6 +37,19 @@ function formatarDataLocal(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+function getSemanaRangeLocal(data: Date) {
+  const diaSemana = data.getDay() // 0=Dom, 1=Seg, ..., 6=Sáb
+  const inicio = new Date(data)
+  const diasAteSegunda = diaSemana === 0 ? 6 : diaSemana - 1
+  inicio.setDate(inicio.getDate() - diasAteSegunda)
+  inicio.setHours(0, 0, 0, 0)
+
+  const fim = new Date(inicio)
+  fim.setDate(fim.getDate() + 6)
+  fim.setHours(23, 59, 59, 999)
+  return { inicio, fim }
+}
+
 function nomeModalidade(slug: string) {
   const mapa: Record<string, string> = {
     volei: 'Vôlei',
@@ -60,6 +73,7 @@ export default function ReservaModalidadePage() {
   const [quadraId, setQuadraId] = useState('')
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [reservas, setReservas] = useState<Reserva[]>([])
+  const [minhasReservas, setMinhasReservas] = useState<Reserva[]>([])
   const [carregando, setCarregando] = useState(false)
   const [slotSelecionado, setSlotSelecionado] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -113,6 +127,18 @@ export default function ReservaModalidadePage() {
   }, [dataSelecionada, quadraId, modalidade])
 
   useEffect(() => {
+    async function carregarMinhasReservas() {
+      if (status !== 'authenticated') return
+      const res = await fetch('/api/reservas/minhas')
+      if (res.ok) {
+        const data = await res.json()
+        setMinhasReservas(data)
+      }
+    }
+    carregarMinhasReservas()
+  }, [status])
+
+  useEffect(() => {
   if (status === 'unauthenticated') {
     router.replace('/login')
     }
@@ -155,20 +181,31 @@ export default function ReservaModalidadePage() {
       return
     }
 
+    setIsModalOpen(false)
     toast.success('Reserva realizada com sucesso!')
 
     const atualizadas = await fetch(
       `/api/reservas?data=${dataFormatada}&quadraId=${quadraId}`
     )
-
     setReservas(await atualizadas.json())
+
+    const atualizadasMinhas = await fetch('/api/reservas/minhas')
+    if (atualizadasMinhas.ok) {
+      setMinhasReservas(await atualizadasMinhas.json())
+    }
   }
 
   const slotsReservados = reservas.map((reserva) => reserva.slot)
 
-  const usuarioJaReservouNestaData = reservas.some(
-    (reserva) => reserva.userId === userId
-  )
+  let usuarioJaReservouNestaSemana = false;
+  if (dataSelecionada) {
+    const { inicio, fim } = getSemanaRangeLocal(dataSelecionada);
+    usuarioJaReservouNestaSemana = minhasReservas.some((r) => {
+      const [ano, mes, dia] = r.data.split('T')[0].split('-').map(Number);
+      const dataReserva = new Date(ano, mes - 1, dia);
+      return dataReserva >= inicio && dataReserva <= fim;
+    });
+  }
 
   const datasDisponiveisStr = agendas.map(a => a.data.split('T')[0])
 
@@ -309,7 +346,7 @@ if (!session) {
                 </div>
               )}
 
-              {userId && usuarioJaReservouNestaData && (
+              {userId && usuarioJaReservouNestaSemana && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 font-medium">
                   Você já possui uma reserva para este fim de semana. Limite de 1 reserva por fim de semana.
                 </div>
@@ -323,7 +360,7 @@ if (!session) {
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {slotsAtuais.map((slot) => {
                     const ocupado = slotsReservados.includes(slot)
-                    const bloqueado = usuarioJaReservouNestaData || !userId
+                    const bloqueado = usuarioJaReservouNestaSemana || !userId
 
                     return (
                       <button
@@ -373,13 +410,13 @@ if (!session) {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={(email) => {
-             setIsModalOpen(false)
              if (slotSelecionado) reservar(slotSelecionado, email)
           }}
           quadraNome={quadras.find(q => q.id === quadraId)?.nome || ''}
           data={dataSelecionada?.toLocaleDateString('pt-BR') || ''}
           horario={slotSelecionado || ''}
           emailPadrao={session?.user?.email || ''}
+          isSubmitting={carregando}
         />
       </div>
     </main>

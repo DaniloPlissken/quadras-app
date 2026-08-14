@@ -32,6 +32,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Preencha todos os campos obrigatórios' }, { status: 400 });
     }
 
+    if (password.trim().length === 0) {
+      return NextResponse.json({ error: 'A senha não pode ser vazia ou composta apenas por espaços.' }, { status: 400 });
+    }
+
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+      return NextResponse.json({ error: 'A senha excedeu o limite máximo seguro de 72 bytes.' }, { status: 400 });
+    }
+
     // Validação matemática do CPF
     if (!validarCPF(cpfLimpo)) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
