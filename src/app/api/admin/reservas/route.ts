@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 /**
  * Cria uma Date UTC midnight a partir de "YYYY-MM-DD".
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
   const where: Prisma.ReservaWhereInput = {}
 
   if (statusFiltro && statusFiltro !== 'todas') {
-    where.status = statusFiltro
+    where.status = statusFiltro as any
   } else {
     // Se não especificar status, podemos trazer apenas as ativas ou todas? 
     // Por padrão (legado), vamos excluir as canceladas a menos que o status seja explicitamente selecionado.
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
     where.quadra = {
       ...(where.quadra || {}),
       modalidade: { nome: modalidadeFiltro }
-    }
+    } as any
   }
 
   const reservas = await prisma.reserva.findMany({
