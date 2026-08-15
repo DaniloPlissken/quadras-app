@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { Printer, Loader2 } from 'lucide-react'
+import { CellFechado, CellLivre, CellReserva } from '@/components/AgendaCells'
 
 type Quadra = {
   id: string
@@ -9,7 +10,6 @@ type Quadra = {
   ativa?: boolean
   modalidade: { id: string; nome: string }
 }
-
 
 type Agenda = {
   id: string
@@ -49,16 +49,6 @@ function getMonday(d: Date) {
   return mon
 }
 
-function getWeekDays(monday: Date) {
-  const days = []
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday)
-    d.setDate(monday.getDate() + i)
-    days.push(d)
-  }
-  return days
-}
-
 function formatarDataLocal(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -74,35 +64,46 @@ function gerarSlotsUnicos(agendas: Agenda[]) {
   return Array.from(slots).sort()
 }
 
-export default function ReservasMatrixPage() {
-  const [quadras, setQuadras] = useState<Quadra[]>([])
+export default function AgendaSemanalPage() {
   const [dataBase, setDataBase] = useState<string>(formatarDataLocal(getMonday(new Date())))
+  
+  const [modalidadeSelecionada, setModalidadeSelecionada] = useState<string>('todas')
+  const [quadraSelecionada, setQuadraSelecionada] = useState<string>('todas')
+
+  const [modalidades, setModalidades] = useState<string[]>([])
+  const [todasQuadras, setTodasQuadras] = useState<Quadra[]>([])
   
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [reservas, setReservas] = useState<Reserva[]>([])
   
   const [carregando, setCarregando] = useState(false)
 
-  // 1. Carregar Quadras
+  // 1. Carregar Quadras (Para preencher filtros)
   useEffect(() => {
-    async function carregarQuadras() {
+    async function carregarFiltros() {
       const res = await fetch('/api/admin/quadras')
       if (res.ok) {
         const data: Quadra[] = await res.json()
         const ativas = data.filter((q: Quadra) => q.ativa !== false)
-        setQuadras(ativas)
+        setTodasQuadras(ativas)
+
+        const mods = Array.from(new Set(ativas.map(q => q.modalidade.nome))).sort()
+        setModalidades(mods)
       }
     }
-    carregarQuadras()
+    carregarFiltros()
   }, [])
 
-  // 2. Carregar Agenda da Semana (Todas as Quadras)
+  // 2. Carregar Agenda da Semana (Com filtro de Quadra opcional)
   useEffect(() => {
     async function carregarSemana() {
       if (!dataBase) return
       setCarregando(true)
-      // Chama sem quadraId para pegar todas
-      const res = await fetch(`/api/admin/agenda-semanal?dataBase=${dataBase}`)
+      
+      const queryParams = new URLSearchParams({ dataBase })
+      if (quadraSelecionada !== 'todas') queryParams.append('quadraId', quadraSelecionada)
+
+      const res = await fetch(`/api/admin/agenda-semanal?${queryParams.toString()}`)
       if (res.ok) {
         const data = await res.json()
         setAgendas(data.agendas || [])
@@ -111,24 +112,38 @@ export default function ReservasMatrixPage() {
       setCarregando(false)
     }
     carregarSemana()
-  }, [dataBase])
+  }, [dataBase, quadraSelecionada])
 
   const handlePrint = () => {
     window.print()
   }
 
-  // Preparação de dados para a Grid
-  const mondayDate = useMemo(() => {
-    const d = new Date(dataBase + 'T12:00:00Z')
-    const day = d.getUTCDay()
-    const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1)
-    const mon = new Date(d)
-    mon.setUTCDate(diff)
-    return mon
-  }, [dataBase])
+  // Filtrar quadras baseado na seleção (modalidade e quadra específica)
+  const quadrasFiltradas = useMemo(() => {
+    return todasQuadras.filter(q => {
+      const matchModalidade = modalidadeSelecionada === 'todas' || q.modalidade.nome === modalidadeSelecionada;
+      const matchQuadra = quadraSelecionada === 'todas' || q.id === quadraSelecionada;
+      return matchModalidade && matchQuadra;
+    });
+  }, [todasQuadras, modalidadeSelecionada, quadraSelecionada])
 
-  const weekDays = useMemo(() => getWeekDays(mondayDate), [mondayDate])
+  // Preparação de dados para a Grid
   const allSlots = useMemo(() => gerarSlotsUnicos(agendas), [agendas])
+
+  // Dias Dinâmicos baseados nas agendas abertas
+  const weekDays = useMemo(() => {
+    // Pega as datas únicas no formato "YYYY-MM-DD" que têm alguma agenda (filtra pelas quadras visíveis também)
+    const datasComAgenda = agendas
+      .filter(a => quadrasFiltradas.some(q => q.id === a.quadraId))
+      .map(a => a.data.split('T')[0])
+
+    const distinctDataStrs = Array.from(new Set(datasComAgenda)).sort()
+    
+    return distinctDataStrs.map(dStr => {
+      const [ano, mes, dia] = dStr.split('-').map(Number)
+      return new Date(ano, mes - 1, dia, 12, 0, 0) // Usar meio-dia local para evitar problemas de timezone
+    })
+  }, [agendas, quadrasFiltradas])
 
   // O(1) Lookups
   const agendasMap = useMemo(() => {
@@ -152,13 +167,13 @@ export default function ReservasMatrixPage() {
   // Agrupar quadras por modalidade
   const quadrasPorModalidade = useMemo(() => {
     const grupos: Record<string, Quadra[]> = {}
-    quadras.forEach(q => {
+    quadrasFiltradas.forEach(q => {
       const mod = q.modalidade.nome
       if (!grupos[mod]) grupos[mod] = []
       grupos[mod].push(q)
     })
     return Object.entries(grupos).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [quadras])
+  }, [quadrasFiltradas])
 
   // CSS for printing - landscape, full width, compact
   const printStyles = `
@@ -201,7 +216,7 @@ export default function ReservasMatrixPage() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Agenda Geral</h1>
-            <p className="text-slate-500 mt-1">Visão em matriz (relatório) de todas as quadras.</p>
+            <p className="text-slate-500 mt-1">Ocupação das quadras e campos.</p>
           </div>
           
           <div className="flex flex-wrap gap-4 items-end">
@@ -211,9 +226,43 @@ export default function ReservasMatrixPage() {
                 type="date"
                 value={dataBase}
                 onChange={e => setDataBase(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[200px]"
+                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[160px]"
               />
             </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Modalidade</label>
+              <select
+                value={modalidadeSelecionada}
+                onChange={e => {
+                  setModalidadeSelecionada(e.target.value)
+                  setQuadraSelecionada('todas') // Reseta a quadra ao mudar modalidade
+                }}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
+              >
+                <option value="todas">Todas</option>
+                {modalidades.map(mod => (
+                  <option key={mod} value={mod}>{mod}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Quadra</label>
+              <select
+                value={quadraSelecionada}
+                onChange={e => setQuadraSelecionada(e.target.value)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
+              >
+                <option value="todas">Todas</option>
+                {todasQuadras
+                  .filter(q => modalidadeSelecionada === 'todas' || q.modalidade.nome === modalidadeSelecionada)
+                  .map(q => (
+                  <option key={q.id} value={q.id}>{q.nome}</option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={handlePrint}
               className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm h-11"
@@ -231,9 +280,9 @@ export default function ReservasMatrixPage() {
           <div className="flex justify-center p-12 no-print">
             <Loader2 className="w-8 h-8 animate-spin text-[#004B87]" />
           </div>
-        ) : quadras.length === 0 ? (
+        ) : quadrasFiltradas.length === 0 ? (
           <div className="text-center p-12 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl m-6">
-            Nenhuma quadra ativa encontrada no sistema.
+            Nenhuma quadra ativa ou com filtros correspondentes encontrada.
           </div>
         ) : (
           <div className="space-y-12">
@@ -242,47 +291,56 @@ export default function ReservasMatrixPage() {
                 <h2 className="text-lg font-black text-slate-800 mb-3 px-1 uppercase tracking-widest border-b-2 border-slate-300 pb-2">{modalidade}</h2>
                 <table className="w-full min-w-max border-collapse text-xs">
                   <thead>
-                    {/* Título Principal */}
+                    {/* Dias da Semana (Primeira Linha) */}
                     <tr>
-                      <th colSpan={1} className="border border-slate-300 bg-white p-2 text-left font-bold uppercase tracking-wider whitespace-nowrap">
-                        ARENA PARQUETENIS
+                      <th className="border border-slate-300 bg-slate-100 p-2 text-center font-bold text-slate-800 uppercase w-20">
+                        Horário
                       </th>
-                      <th colSpan={weekDays.length * quadrasModalidade.length} className="border border-slate-300 bg-slate-100 p-2 text-right text-slate-700 font-medium tracking-wide">
-                        {weekDays[0].toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '')} – {weekDays[6].toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '')} (Horário Padrão de Brasília - São Paulo)
-                      </th>
-                    </tr>
-                    {/* Dias da Semana */}
-                    <tr>
-                      <th className="border border-slate-300 bg-slate-50 w-16 p-1"></th>
                       {weekDays.map(day => (
                         <th 
                           key={formatarDataLocal(day)} 
                           colSpan={quadrasModalidade.length} 
-                          className="border border-slate-300 bg-slate-200 p-1.5 text-center font-bold text-slate-800 uppercase text-xs"
+                          className="border border-slate-300 bg-slate-200 p-2 text-center font-bold text-slate-800 uppercase"
                         >
                           {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}. {day.getDate()}/{day.getMonth() + 1}
                         </th>
                       ))}
                     </tr>
-                    {/* Nomes das Quadras */}
-                    <tr>
-                      <th className="border border-slate-300 bg-white p-1"></th>
-                      {weekDays.map(day => (
-                        quadrasModalidade.map(q => (
-                          <th 
-                            key={`${formatarDataLocal(day)}-${q.id}-header`} 
-                            className="border border-slate-300 bg-white p-1 text-center font-semibold text-slate-700 min-w-[150px] max-w-[200px]"
-                          >
-                            {q.nome.toUpperCase()}
-                          </th>
-                        ))
-                      ))}
-                    </tr>
+                    {/* Nomes das Quadras (Segunda Linha) */}
+                    {weekDays.length > 0 && (
+                      <tr>
+                        <th className="border border-slate-300 bg-white p-1"></th>
+                        {weekDays.map(day => (
+                          quadrasModalidade.map(q => (
+                            <th 
+                              key={`${formatarDataLocal(day)}-${q.id}-header`} 
+                              className="border border-slate-300 bg-white p-2 text-center font-bold text-slate-700 uppercase"
+                            >
+                              {q.nome}
+                            </th>
+                          ))
+                        ))}
+                      </tr>
+                    )}
                   </thead>
                   <tbody>
-                    {allSlots.map(slot => (
+                    {allSlots.map(slot => {
+                      // Verifica se o slot tem alguma atividade em qualquer dia/quadra desta modalidade
+                      const hasAnyActivityInSlot = weekDays.some(day => {
+                        const dataStr = formatarDataLocal(day)
+                        return quadrasModalidade.some(quadra => {
+                          const agenda = agendasMap.get(`${dataStr}-${quadra.id}`)
+                          const isAberto = agenda?.horarios.includes(slot)
+                          const reserva = reservasMap.get(`${dataStr}-${slot}-${quadra.id}`)
+                          return isAberto || !!reserva
+                        })
+                      })
+
+                      if (!hasAnyActivityInSlot) return null;
+
+                      return (
                       <tr key={slot}>
-                        <td className="border border-slate-300 bg-slate-50 font-bold p-1.5 text-center align-top whitespace-nowrap">
+                        <td className="border border-slate-300 bg-slate-50 font-bold p-2 text-center whitespace-nowrap text-slate-800">
                           {slot.split(' - ')[0] || slot}
                         </td>
                         {weekDays.map(day => {
@@ -295,46 +353,41 @@ export default function ReservasMatrixPage() {
 
                             // Célula vazia/fechada
                             if (!isAberto && !reserva) {
-                              return (
-                                <td key={`${dataStr}-${quadra.id}`} className="border border-slate-200 bg-slate-50/40 p-1">
-                                  {/* Fechado */}
-                                </td>
-                              )
+                              return <CellFechado key={`${dataStr}-${quadra.id}`} />
                             }
 
                             // Célula com Reserva
                             if (reserva) {
                               const cpf = reserva.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
                               let infoTexto = ''
+                              let subInfo = ''
                               
                               if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
                                 const resp = reserva.time.responsaveis[0]
-                                const cpfClean = resp.cpf.replace(/\D/g, '')
                                 const telClean = resp.telefone || ''
-                                infoTexto = `${reserva.time.nome.toUpperCase()} CPF ${cpfClean} TEF ${telClean}`
+                                infoTexto = `${reserva.time.nome.toUpperCase()} (TIME)`
+                                subInfo = `Resp: ${resp.nome.toUpperCase()} - Tel: ${telClean}`
                               } else {
-                                infoTexto = `${reserva.user.name.toUpperCase()} CPF ${cpf}`
+                                infoTexto = reserva.user.name.toUpperCase()
+                                subInfo = `CPF: ${cpf}`
                               }
 
                               return (
-                                <td key={`${dataStr}-${quadra.id}`} className="border-[1.5px] border-slate-800 bg-white p-1.5 align-top hover:bg-slate-50 transition-colors cursor-default">
-                                  <div className="font-bold leading-[1.1] break-words text-[10px] text-slate-900 uppercase">
-                                    {quadra.nome.toUpperCase()} {infoTexto} {slot}
-                                  </div>
-                                </td>
+                                <CellReserva 
+                                  key={`${dataStr}-${quadra.id}`}
+                                  infoTexto={infoTexto}
+                                  subInfo={subInfo}
+                                />
                               )
                             }
 
                             // Célula Livre
-                            return (
-                              <td key={`${dataStr}-${quadra.id}`} className="border border-slate-300 bg-white p-1 text-center text-[10px] text-slate-300 font-medium align-middle hover:bg-slate-50 transition-colors">
-                                {/* Opcional: exibir "Livre" ou deixar em branco como na imagem */}
-                              </td>
-                            )
+                            return <CellLivre key={`${dataStr}-${quadra.id}`} />
                           })
                         })}
                       </tr>
-                    ))}
+                      )
+                    })}
                     {allSlots.length === 0 && (
                       <tr>
                         <td colSpan={(weekDays.length * quadrasModalidade.length) + 1} className="p-8 text-center text-slate-500 border border-slate-300 font-medium">
