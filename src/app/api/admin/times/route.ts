@@ -21,6 +21,7 @@ export async function GET() {
   }
 
   const times = await prisma.time.findMany({
+    take: 500,
     include: {
       responsaveis: true,
     },

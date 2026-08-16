@@ -224,7 +224,9 @@ export default function AdminReservasPage() {
     link.href = URL.createObjectURL(blob)
     link.download = `relatorio_reservas_${new Date().getTime()}.csv`
     link.click()
+    URL.revokeObjectURL(link.href)
   }
+
 
   const limparFiltros = () => {
     setFiltroDataInicio('')

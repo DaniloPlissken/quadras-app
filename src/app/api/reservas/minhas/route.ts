@@ -18,6 +18,8 @@ export async function GET() {
       userId: session.user.id,
       status: { not: 'CANCELADA_ADMIN' },
     },
+    take: 200,
+    orderBy: [{ data: 'desc' }, { slot: 'asc' }],
     select: {
       id: true,
       data: true,

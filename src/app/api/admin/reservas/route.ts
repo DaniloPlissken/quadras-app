@@ -61,6 +61,7 @@ export async function GET(request: Request) {
 
   const reservas = await prisma.reserva.findMany({
     where,
+    take: 1000,
     include: {
       user: { select: { name: true, email: true } }, // Sem 'id' para proteger CPF
       quadra: { include: { modalidade: true } },
