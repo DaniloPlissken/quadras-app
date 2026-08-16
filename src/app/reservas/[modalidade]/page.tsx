@@ -294,28 +294,36 @@ if (!session) {
   return (
     <main className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-6xl">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-            Reserva - <span className="text-primary">{nomeModalidade(modalidade)}</span>
-          </h1>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div>
+            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#004B87] mb-2">
+              Agendamento
+            </span>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">
+              Reserva de <span className="text-[#004B87]">{nomeModalidade(modalidade)}</span>
+            </h1>
+          </div>
           <Link
             href="/reservas"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            className="text-sm font-bold text-slate-500 hover:text-[#004B87] transition-colors flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200 hover:shadow-md"
           >
             ← Voltar
           </Link>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-          <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden bg-white">
-            <CardHeader className="bg-slate-900 text-white p-6">
-              <CardTitle className="text-xl font-semibold">Escolha a data</CardTitle>
+          {/* Card Calendário */}
+          <Card className="border-0 shadow-2xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-white h-fit p-0">
+            <CardHeader className="bg-[#004B87] text-white p-8 relative overflow-hidden rounded-t-[2rem]">
+              {/* Decoração sutil */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+              <CardTitle className="text-2xl font-black tracking-tight relative z-10">Escolha a data</CardTitle>
             </CardHeader>
 
-            <CardContent className="p-6">
-              <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm text-blue-900">
-                <p className="font-medium">
-                  Datas liberadas pelo administrador aparecerão ativas no calendário.
+            <CardContent className="p-8">
+              <div className="mb-8 rounded-2xl bg-blue-50 p-5 text-sm text-[#004B87] border border-blue-100/50">
+                <p className="font-semibold leading-relaxed">
+                  Datas liberadas pelo administrador aparecerão ativas no calendário abaixo.
                 </p>
               </div>
 
@@ -333,34 +341,47 @@ if (!session) {
                     const str = formatarDataLocal(date);
                     return !datasDisponiveisStr.includes(str);
                   }}
-                  className="rounded-xl border border-slate-100 shadow-sm p-4 bg-white"
+                  className="rounded-2xl border-none p-0 bg-white"
                   classNames={{
-                    day_selected: "bg-primary text-white hover:bg-primary/90 hover:text-white focus:bg-primary focus:text-white",
-                    day_today: "bg-slate-100 text-slate-900",
+                    day_selected: "bg-[#004B87] text-white hover:bg-[#003865] hover:text-white focus:bg-[#004B87] focus:text-white font-bold shadow-md shadow-[#004B87]/30",
+                    day_today: "bg-slate-100 text-slate-900 font-bold",
+                    day: "h-10 w-10 p-0 font-normal text-slate-700 aria-selected:opacity-100 hover:bg-slate-100 rounded-full transition-all",
+                    head_cell: "text-slate-400 font-bold text-[0.8rem] uppercase tracking-wider w-10",
+                    nav_button: "hover:bg-slate-100 p-2 rounded-full transition-colors",
                   }}
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden bg-white">
-            <CardHeader className="bg-white border-b border-slate-100 p-6 flex flex-row items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-slate-800">
-                Horários disponíveis
-              </CardTitle>
+          {/* Card Horários */}
+          <Card className="border-0 shadow-2xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-white p-0">
+            <CardHeader className="bg-white border-b border-slate-100 p-8 flex flex-row items-center justify-between rounded-t-[2rem]">
+              <div>
+                <CardTitle className="text-2xl font-black text-slate-800 tracking-tight">
+                  Horários disponíveis
+                </CardTitle>
+                <p className="text-slate-500 mt-1 font-medium text-sm">Selecione o melhor horário para o seu jogo.</p>
+              </div>
               {isFetching && (
-                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                <div className="bg-blue-50 p-3 rounded-full">
+                  <Loader2 className="w-5 h-5 text-[#004B87] animate-spin" />
+                </div>
               )}
             </CardHeader>
 
-            <CardContent className="p-6 space-y-8">
+            <CardContent className="p-8 space-y-8">
               <div className="flex flex-wrap gap-3">
                 {quadras.map((quadra) => (
                   <Button
                     key={quadra.id}
-                    variant={quadraId === quadra.id ? 'default' : 'outline'}
+                    variant="ghost"
                     onClick={() => setQuadraId(quadra.id)}
-                    className={`rounded-full px-6 transition-all ${quadraId === quadra.id ? 'bg-primary hover:bg-primary/90 text-white shadow-md' : 'hover:border-primary hover:text-primary'}`}
+                    className={`rounded-full px-6 py-6 text-sm font-bold transition-all ${
+                      quadraId === quadra.id 
+                        ? 'bg-[#004B87] hover:bg-[#003865] text-white shadow-lg shadow-[#004B87]/20' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    }`}
                   >
                     {quadra.nome}
                   </Button>
@@ -380,11 +401,11 @@ if (!session) {
               )}
 
               {dataSelecionada && slotsAtuais.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  Nenhum horário liberado para esta data.
+                <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-slate-500 font-medium">Nenhum horário liberado para esta data.</p>
                 </div>
               ) : (
-                <div className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-3 transition-opacity duration-300 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+                <div className={`grid gap-4 sm:grid-cols-2 transition-opacity duration-300 ${isFetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                   {slotsAtuais.map((slot) => {
                     const ocupado = slotsReservados.includes(slot)
                     const bloqueado = usuarioJaReservouNestaSemana || !userId
@@ -397,33 +418,30 @@ if (!session) {
                           setSlotSelecionado(slot)
                           setIsModalOpen(true)
                         }}
-                        className={`group relative overflow-hidden rounded-xl p-4 text-left transition-all duration-300
+                        className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 border-2
                           ${ocupado 
-                            ? 'bg-slate-100 cursor-not-allowed opacity-70' 
+                            ? 'bg-slate-50 border-transparent cursor-not-allowed' 
                             : bloqueado
-                              ? 'bg-slate-50 border border-slate-200 cursor-not-allowed'
-                              : 'bg-white border-2 border-slate-200 hover:border-secondary hover:shadow-lg cursor-pointer active:scale-95'
+                              ? 'bg-slate-50 border-slate-100 cursor-not-allowed'
+                              : 'bg-white border-slate-100 hover:border-[#004B87] hover:shadow-xl hover:shadow-[#004B87]/10 hover:-translate-y-1 cursor-pointer'
                           }
                         `}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-lg font-bold ${ocupado ? 'text-slate-500' : 'text-slate-800 group-hover:text-secondary'}`}>
+                        <div className="flex flex-col gap-3">
+                          <span className={`text-2xl font-black tracking-tight transition-colors ${ocupado ? 'text-slate-400' : 'text-slate-800 group-hover:text-[#004B87]'}`}>
                             {slot}
                           </span>
-                          <span className={`text-xs font-semibold px-2 py-1 rounded-full uppercase tracking-wider
+                          <span className={`text-[11px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider w-fit
                             ${ocupado 
-                              ? 'bg-slate-200 text-slate-600' 
+                              ? 'bg-slate-200 text-slate-500' 
                               : bloqueado 
-                                ? 'bg-slate-200 text-slate-500'
-                                : 'bg-secondary/10 text-secondary'
+                                ? 'bg-slate-200 text-slate-400'
+                                : 'bg-[#009A44]/10 text-[#009A44] group-hover:bg-[#004B87] group-hover:text-white transition-colors'
                             }
                           `}>
-                            {ocupado ? 'Ocupado' : bloqueado ? 'Bloqueado' : 'Livre'}
+                            {ocupado ? 'Ocupado' : bloqueado ? 'Bloqueado' : 'Livre para reservar'}
                           </span>
                         </div>
-                        {(!ocupado && !bloqueado) && (
-                          <div className="absolute inset-0 bg-secondary/5 translate-y-full transition-transform group-hover:translate-y-0" />
-                        )}
                       </button>
                     )
                   })}
