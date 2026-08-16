@@ -80,7 +80,7 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json()
-    const { id, status } = body
+    const { id, status, motivo } = body
 
     if (!id || !status) {
       return NextResponse.json(
@@ -95,7 +95,31 @@ export async function PATCH(request: Request) {
         status,
         cancelToken: status === 'CANCELADA_ADMIN' ? id : ""
       },
+      include: {
+        user: true,
+        quadra: true
+      }
     })
+
+    if (status === 'CANCELADA_ADMIN') {
+      try {
+        const { enviarEmailCancelamentoAdmin } = await import('@/lib/mail');
+        const formatShort = (d: Date) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+        
+        const motivoEnvio = motivo || "Reserva cancelada pela equipe de administração sem motivo específico definido.";
+
+        await enviarEmailCancelamentoAdmin(
+          reserva.user.email,
+          reserva.user.name,
+          reserva.quadra.nome,
+          formatShort(reserva.data),
+          reserva.slot,
+          motivoEnvio
+        );
+      } catch (e) {
+        console.error('Falha ao enviar e-mail de cancelamento admin:', e);
+      }
+    }
 
     return NextResponse.json(reserva)
   } catch (error) {

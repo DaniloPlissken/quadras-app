@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { CalendarCheck, Users, XCircle, TrendingUp } from 'lucide-react'
+import { formatDataCivilBR } from '@/lib/dateUtils'
 
 export default async function AdminDashboard() {
   const hoje = new Date()
@@ -117,7 +118,7 @@ export default async function AdminDashboard() {
               {proximasReservas.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-4 font-medium">
-                    {new Date(r.data).toLocaleDateString('pt-BR')}
+                    {formatDataCivilBR(r.data)}
                   </td>
                   <td className="p-4">
                     <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs font-semibold">

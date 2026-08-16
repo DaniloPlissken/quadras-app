@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Calendar } from '@/components/ui/calendar'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ptBR } from 'date-fns/locale'
@@ -74,7 +75,8 @@ export default function ReservaModalidadePage() {
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [minhasReservas, setMinhasReservas] = useState<Reserva[]>([])
-  const [carregando, setCarregando] = useState(false)
+  const [carregando, setCarregando] = useState(false) // Para o submit do modal
+  const [isFetching, setIsFetching] = useState(false) // Para carregamento visual em background
   const [slotSelecionado, setSlotSelecionado] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -98,32 +100,50 @@ export default function ReservaModalidadePage() {
   }, [modalidade])
 
   useEffect(() => {
+    const controller = new AbortController()
     async function carregarAgendas() {
       if (modalidade === 'futebol' || !quadraId) return
+      setIsFetching(true)
 
-      const res = await fetch(`/api/agenda?quadraId=${quadraId}`)
-      const data = await res.json()
-      setAgendas(data)
+      try {
+        const res = await fetch(`/api/agenda?quadraId=${quadraId}`, { signal: controller.signal })
+        const data = await res.json()
+        setAgendas(data)
+      } catch (err: any) {
+        if (err.name !== 'AbortError') console.error(err)
+      } finally {
+        setIsFetching(false)
+      }
     }
     carregarAgendas()
+    return () => controller.abort()
   }, [quadraId, modalidade])
 
   useEffect(() => {
+    const controller = new AbortController()
     async function carregarReservas() {
       if (modalidade === 'futebol') return
       if (!dataSelecionada || !quadraId) return
+      setIsFetching(true)
 
       const dataFormatada = formatarDataLocal(dataSelecionada)
 
-      const res = await fetch(
-        `/api/reservas?data=${dataFormatada}&quadraId=${quadraId}`
-      )
-
-      const data = await res.json()
-      setReservas(data)
+      try {
+        const res = await fetch(
+          `/api/reservas?data=${dataFormatada}&quadraId=${quadraId}`,
+          { signal: controller.signal }
+        )
+        const data = await res.json()
+        setReservas(data)
+      } catch (err: any) {
+        if (err.name !== 'AbortError') console.error(err)
+      } finally {
+        setIsFetching(false)
+      }
     }
 
     carregarReservas()
+    return () => controller.abort()
   }, [dataSelecionada, quadraId, modalidade])
 
   useEffect(() => {
@@ -182,7 +202,14 @@ export default function ReservaModalidadePage() {
     }
 
     setIsModalOpen(false)
-    toast.success('Reserva realizada com sucesso!')
+    
+    const reservaCriada = await res.json()
+    
+    if (reservaCriada.emailStatus === 'FALHOU') {
+      toast.success('Reserva realizada! Porém houve uma falha ao enviar o e-mail de confirmação.', { duration: 5000 })
+    } else {
+      toast.success('Reserva realizada com sucesso e e-mail enviado!')
+    }
 
     const atualizadas = await fetch(
       `/api/reservas?data=${dataFormatada}&quadraId=${quadraId}`
@@ -320,10 +347,13 @@ if (!session) {
           </Card>
 
           <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden bg-white">
-            <CardHeader className="bg-white border-b border-slate-100 p-6">
+            <CardHeader className="bg-white border-b border-slate-100 p-6 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-slate-800">
                 Horários disponíveis
               </CardTitle>
+              {isFetching && (
+                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+              )}
             </CardHeader>
 
             <CardContent className="p-6 space-y-8">
@@ -357,7 +387,7 @@ if (!session) {
                   Nenhum horário liberado para esta data.
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-3 transition-opacity duration-300 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
                   {slotsAtuais.map((slot) => {
                     const ocupado = slotsReservados.includes(slot)
                     const bloqueado = usuarioJaReservouNestaSemana || !userId

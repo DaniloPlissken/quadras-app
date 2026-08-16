@@ -223,9 +223,44 @@ export async function POST(req: Request) {
         data: dataReserva,
         slot,
       },
+      include: {
+        user: true,
+      }
     })
 
-    return NextResponse.json(reserva, { status: 201 })
+    const { emailConfirmacao } = body;
+    let emailStatus = 'PENDENTE';
+    
+    // Tenta enviar o e-mail logo após criar a reserva
+    if (emailConfirmacao) {
+      try {
+        const { enviarEmailConfirmacao } = await import('@/lib/mail');
+        
+        // Formatar a data para o email (DD/MM/YYYY)
+        const formatShort = (d: Date) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+        
+        await enviarEmailConfirmacao(
+          emailConfirmacao,
+          reserva.user.name,
+          quadra.nome,
+          formatShort(dataReserva),
+          slot
+        );
+        
+        emailStatus = 'ENVIADO';
+      } catch (err) {
+        console.error('Falha ao enviar e-mail:', err);
+        emailStatus = 'FALHOU';
+      }
+      
+      // Atualiza o status do email na reserva recém-criada
+      await prisma.reserva.update({
+        where: { id: reserva.id },
+        data: { emailStatus }
+      });
+    }
+
+    return NextResponse.json({ ...reserva, emailStatus }, { status: 201 })
   } catch (error) {
     console.error(error)
 

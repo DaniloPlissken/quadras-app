@@ -75,7 +75,12 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">Senha</Label>
+                <Link href="/esqueci-senha" className="text-sm text-[#004B87] hover:underline">
+                  Esqueceu a senha?
+                </Link>
+              </div>
               <Input 
                 id="password" 
                 type="password" 

@@ -24,8 +24,18 @@ model User {
   name     String
   email    String    @unique
   password String
+  telefone String?
   role     Role      @default(USER)
   reservas Reserva[]
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
 }
 
 model Modalidade {
@@ -52,8 +62,9 @@ model Reserva {
   quadraId String
   timeId   String?
   data     DateTime
-  slot     String
+  slot        String
   status      ReservaStatus @default(CONFIRMADA)
+  emailStatus String        @default("PENDENTE")
   cancelToken String        @default("")
   quadra      Quadra        @relation(fields: [quadraId], references: [id])
   user        User          @relation(fields: [userId], references: [id])

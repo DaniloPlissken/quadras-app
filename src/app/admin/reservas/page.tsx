@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { XCircle, Filter, Loader2, Download, Printer } from 'lucide-react'
+import { XCircle, Filter, Loader2, Download, Printer, Mail } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { formatDataCivilBR } from '@/lib/dateUtils'
 
 type Quadra = {
   id: string
@@ -25,8 +30,24 @@ type Reserva = {
 
 export default function AdminReservasPage() {
   const [reservas, setReservas] = useState<Reserva[]>([])
-  const [carregando, setCarregando] = useState(true)
+  
+  // Estados de carregamento refinados
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isFetching, setIsFetching] = useState(false)
+
   const [cancelando, setCancelando] = useState<string | null>(null)
+
+  // Modal Cancelamento
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [reservaParaCancelar, setReservaParaCancelar] = useState<Reserva | null>(null)
+  const [motivoCancelamento, setMotivoCancelamento] = useState('Condições climáticas (chuva, etc.)')
+  const [motivoOutro, setMotivoOutro] = useState('')
+
+  // Modal Mensagem
+  const [mensagemModalOpen, setMensagemModalOpen] = useState(false)
+  const [reservaSelecionada, setReservaSelecionada] = useState<Reserva | null>(null)
+  const [mensagemTexto, setMensagemTexto] = useState('')
+  const [enviandoMsg, setEnviandoMsg] = useState(false)
 
   // Filtros
   const [filtroDataInicio, setFiltroDataInicio] = useState('')
@@ -53,9 +74,11 @@ export default function AdminReservasPage() {
   }, [])
 
   useEffect(() => {
-    let ignore = false
+    const controller = new AbortController()
+    const signal = controller.signal
+
     async function carregar() {
-      setCarregando(true)
+      setIsFetching(true)
       const params = new URLSearchParams()
       if (filtroDataInicio) params.set('dataInicio', filtroDataInicio)
       if (filtroDataFim) params.set('dataFim', filtroDataFim)
@@ -63,19 +86,28 @@ export default function AdminReservasPage() {
       if (filtroQuadra !== 'todas') params.set('quadraId', filtroQuadra)
       if (filtroStatus !== 'todas') params.set('status', filtroStatus)
 
-      const res = await fetch(`/api/admin/reservas?${params.toString()}`)
-      if (res.ok && !ignore) {
-        setReservas(await res.json())
-      }
-      if (!ignore) {
-        setCarregando(false)
+      try {
+        const res = await fetch(`/api/admin/reservas?${params.toString()}`, { signal })
+        if (res.ok) {
+          const data = await res.json()
+          setReservas(data)
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Erro ao buscar reservas:', err)
+        }
+      } finally {
+        setIsFetching(false)
+        setIsInitialLoad(false)
       }
     }
     carregar()
-    return () => { ignore = true }
+    
+    return () => { controller.abort() }
   }, [filtroDataInicio, filtroDataFim, filtroModalidade, filtroQuadra, filtroStatus])
 
-  async function carregarReservas() {
+  async function carregarReservasSilencioso() {
+    setIsFetching(true)
     const params = new URLSearchParams()
     if (filtroDataInicio) params.set('dataInicio', filtroDataInicio)
     if (filtroDataFim) params.set('dataFim', filtroDataFim)
@@ -83,28 +115,76 @@ export default function AdminReservasPage() {
     if (filtroQuadra !== 'todas') params.set('quadraId', filtroQuadra)
     if (filtroStatus !== 'todas') params.set('status', filtroStatus)
 
-    const res = await fetch(`/api/admin/reservas?${params.toString()}`)
-    if (res.ok) {
-      setReservas(await res.json())
+    try {
+      const res = await fetch(`/api/admin/reservas?${params.toString()}`)
+      if (res.ok) {
+        setReservas(await res.json())
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsFetching(false)
     }
   }
 
-  async function cancelarReserva(id: string) {
-    if (!confirm('Tem certeza que deseja cancelar esta reserva?')) return
+  async function confirmarCancelamento() {
+    if (!reservaParaCancelar) return
+    
+    let motivoFinal = motivoCancelamento
+    if (motivoCancelamento === 'Outro') {
+      if (!motivoOutro.trim()) {
+        toast.error('Por favor, informe o motivo do cancelamento.')
+        return
+      }
+      motivoFinal = motivoOutro.trim()
+    }
 
-    setCancelando(id)
+    setCancelando(reservaParaCancelar.id)
     const res = await fetch('/api/admin/reservas', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status: 'CANCELADA_ADMIN' }),
+      body: JSON.stringify({ 
+        id: reservaParaCancelar.id, 
+        status: 'CANCELADA_ADMIN',
+        motivo: motivoFinal
+      }),
     })
     setCancelando(null)
 
     if (res.ok) {
-      toast.success('Reserva cancelada com sucesso!')
-      carregarReservas()
+      toast.success('Reserva cancelada com sucesso e e-mail enviado!')
+      setCancelModalOpen(false)
+      setReservaParaCancelar(null)
+      carregarReservasSilencioso()
     } else {
       toast.error('Erro ao cancelar reserva.')
+    }
+  }
+
+  async function handleEnviarMensagem() {
+    if (!reservaSelecionada || !mensagemTexto.trim()) return
+
+    setEnviandoMsg(true)
+    try {
+      const res = await fetch('/api/admin/reservas/mensagem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservaId: reservaSelecionada.id,
+          mensagem: mensagemTexto
+        })
+      })
+
+      if (!res.ok) throw new Error()
+      
+      toast.success('Mensagem enviada com sucesso ao e-mail do cidadão!')
+      setMensagemModalOpen(false)
+      setMensagemTexto('')
+      setReservaSelecionada(null)
+    } catch (e) {
+      toast.error('Erro ao enviar mensagem.')
+    } finally {
+      setEnviandoMsg(false)
     }
   }
 
@@ -114,7 +194,7 @@ export default function AdminReservasPage() {
     const cabecalho = ['Data', 'Horário', 'Modalidade', 'Quadra', 'Status', 'Tipo', 'Responsável', 'Contato/Time']
     
     const linhas = reservas.map(r => {
-      const data = new Date(r.data).toLocaleDateString('pt-BR')
+      const data = formatDataCivilBR(r.data)
       const isTime = !!r.time
       const tipo = isTime ? 'Time' : 'Cidadão'
       
@@ -291,17 +371,28 @@ export default function AdminReservasPage() {
           <p className="text-slate-500">Período: {filtroDataInicio || 'Sempre'} até {filtroDataFim || 'Sempre'} | Total: {reservas.length} registros.</p>
         </div>
 
-        {carregando ? (
-          <div className="p-12 flex items-center justify-center text-slate-400 no-print">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />
-            Carregando dados...
+        {/* Indicador de atualização em background */}
+        <div className={`h-1 w-full bg-slate-100 overflow-hidden no-print transition-opacity duration-300 ${isFetching && !isInitialLoad ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="h-full bg-blue-500 w-1/3 animate-[slide_1.5s_ease-in-out_infinite]"></div>
+        </div>
+        <style>{`
+          @keyframes slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+          }
+        `}</style>
+
+        {isInitialLoad ? (
+          <div className="p-12 flex flex-col items-center justify-center text-slate-400 no-print">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-300 mb-4" />
+            <p className="text-sm">Carregando registros...</p>
           </div>
         ) : reservas.length === 0 ? (
           <div className="p-12 text-center text-slate-400 font-medium">
             Nenhuma reserva encontrada para os filtros selecionados.
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto transition-opacity duration-300 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -330,7 +421,7 @@ export default function AdminReservasPage() {
                   return (
                   <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="p-4 font-semibold whitespace-nowrap text-slate-800">
-                      {new Date(r.data).toLocaleDateString('pt-BR')}
+                      {formatDataCivilBR(r.data)}
                     </td>
                     <td className="p-4">
                       <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-lg text-xs font-bold">
@@ -361,10 +452,28 @@ export default function AdminReservasPage() {
                         {r.status === 'CONFIRMADA' ? 'Confirmada' : r.status === 'CONCLUIDA' ? 'Concluída' : 'Cancelada'}
                       </span>
                     </td>
-                    <td className="p-4 text-right no-print">
+                    <td className="p-4 text-right no-print flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setReservaSelecionada(r)
+                          setMensagemTexto('')
+                          setMensagemModalOpen(true)
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-transparent hover:border-blue-200"
+                        title="Enviar E-mail"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        Mensagem
+                      </button>
+
                       {r.status === 'CONFIRMADA' && (
                         <button
-                          onClick={() => cancelarReserva(r.id)}
+                          onClick={() => {
+                            setReservaParaCancelar(r)
+                            setMotivoCancelamento('Condições climáticas (chuva, etc.)')
+                            setMotivoOutro('')
+                            setCancelModalOpen(true)
+                          }}
                           disabled={cancelando === r.id}
                           className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors disabled:opacity-50 border border-transparent hover:border-red-200"
                         >
@@ -384,6 +493,96 @@ export default function AdminReservasPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={mensagemModalOpen} onOpenChange={setMensagemModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enviar E-mail</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-slate-500">
+              Escreva uma mensagem para o cidadão responsável por esta reserva. Ele receberá um e-mail em nome da Administração.
+            </p>
+            {reservaSelecionada && (
+              <div className="bg-slate-50 p-3 rounded-lg text-xs font-mono text-slate-600">
+                Reserva: {reservaSelecionada.quadra.nome} - {formatDataCivilBR(reservaSelecionada.data)} às {reservaSelecionada.slot}
+                <br/>
+                Para: {reservaSelecionada.user.name} ({reservaSelecionada.user.email})
+              </div>
+            )}
+            <Textarea 
+              placeholder="Digite sua mensagem aqui..." 
+              value={mensagemTexto}
+              onChange={(e) => setMensagemTexto(e.target.value)}
+              className="min-h-[150px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMensagemModalOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={handleEnviarMensagem} 
+              disabled={enviandoMsg || !mensagemTexto.trim()}
+              className="bg-[#004B87] hover:bg-[#003666]"
+            >
+              {enviandoMsg ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+              Enviar Mensagem
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Cancelamento */}
+      <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirmar Cancelamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-slate-500">
+              Esta ação enviará um e-mail automático ao cidadão informando o cancelamento da reserva.
+            </p>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Motivo do Cancelamento</label>
+              <Select value={motivoCancelamento} onValueChange={setMotivoCancelamento}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Condições climáticas (chuva, etc.)">Condições climáticas (chuva, etc.)</SelectItem>
+                  <SelectItem value="Manutenção emergencial no local">Manutenção emergencial no local</SelectItem>
+                  <SelectItem value="Evento oficial da Prefeitura/FUTEL">Evento oficial da Prefeitura/FUTEL</SelectItem>
+                  <SelectItem value="Problemas de segurança na quadra">Problemas de segurança na quadra</SelectItem>
+                  <SelectItem value="Outro">Outro (digitar)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {motivoCancelamento === 'Outro' && (
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Especifique o motivo</label>
+                <Textarea 
+                  placeholder="Descreva o motivo que será enviado no e-mail..."
+                  value={motivoOutro}
+                  onChange={(e) => setMotivoOutro(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelModalOpen(false)}>Voltar</Button>
+            <Button 
+              onClick={confirmarCancelamento} 
+              disabled={cancelando === reservaParaCancelar?.id || (motivoCancelamento === 'Outro' && !motivoOutro.trim())}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {cancelando === reservaParaCancelar?.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
+              Confirmar Cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

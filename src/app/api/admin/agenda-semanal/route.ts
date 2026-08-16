@@ -66,7 +66,7 @@ export async function GET(req: Request) {
   const reservas = await prisma.reserva.findMany({
     where: reservaWhere,
     include: {
-      user: { select: { id: true, name: true, email: true } },
+      user: { select: { id: true, name: true, email: true, telefone: true } },
       time: {
         include: {
           responsaveis: true

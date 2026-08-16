@@ -70,6 +70,9 @@ export default function AdminCalendarioPage() {
   const [quadraId, setQuadraId] = useState('')
   const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>(new Date())
   const [agendas, setAgendas] = useState<Agenda[]>([])
+  
+  const [isFetchingAgendas, setIsFetchingAgendas] = useState(false)
+  const [isFetchingResumo, setIsFetchingResumo] = useState(false)
   const [horariosEditando, setHorariosEditando] = useState<string[]>([])
   const [salvando, setSalvando] = useState(false)
   const [novoSlot, setNovoSlot] = useState('')
@@ -127,10 +130,55 @@ export default function AdminCalendarioPage() {
 
   useEffect(() => {
     if (!quadraId) return
-    let ignore = false
+    const controller = new AbortController()
     async function carregar() {
+      setIsFetchingAgendas(true)
+      try {
+        const res = await fetch(`/api/agenda?quadraId=${quadraId}&t=${Date.now()}`, { signal: controller.signal })
+        if (res.ok) {
+          const data: Agenda[] = await res.json()
+          setAgendas(data)
+          if (dataSelecionada) {
+            const str = formatarDataLocal(dataSelecionada)
+            const enc = data.find(a => a.data.split('T')[0] === str)
+            setHorariosEditando(enc?.horarios || [])
+          }
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') console.error(err)
+      } finally {
+        setIsFetchingAgendas(false)
+      }
+    }
+    carregar()
+    return () => controller.abort()
+  }, [quadraId, dataSelecionada])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    async function carregar() {
+      setIsFetchingResumo(true)
+      try {
+        const res = await fetch(`/api/admin/agenda/resumo?t=${Date.now()}`, { signal: controller.signal })
+        if (res.ok) {
+          setResumo(await res.json())
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') console.error(err)
+      } finally {
+        setIsFetchingResumo(false)
+      }
+    }
+    carregar()
+    return () => controller.abort()
+  }, [])
+
+  async function carregarAgendas() {
+    if (!quadraId) return
+    setIsFetchingAgendas(true)
+    try {
       const res = await fetch(`/api/agenda?quadraId=${quadraId}&t=${Date.now()}`)
-      if (res.ok && !ignore) {
+      if (res.ok) {
         const data: Agenda[] = await res.json()
         setAgendas(data)
         if (dataSelecionada) {
@@ -139,45 +187,20 @@ export default function AdminCalendarioPage() {
           setHorariosEditando(enc?.horarios || [])
         }
       }
-    }
-    carregar()
-    return () => {
-      ignore = true
-    }
-  }, [quadraId, dataSelecionada])
-
-  useEffect(() => {
-    let ignore = false
-    async function carregar() {
-      const res = await fetch(`/api/admin/agenda/resumo?t=${Date.now()}`)
-      if (res.ok && !ignore) {
-        setResumo(await res.json())
-      }
-    }
-    carregar()
-    return () => {
-      ignore = true
-    }
-  }, [])
-
-  async function carregarAgendas() {
-    if (!quadraId) return
-    const res = await fetch(`/api/agenda?quadraId=${quadraId}&t=${Date.now()}`)
-    if (res.ok) {
-      const data: Agenda[] = await res.json()
-      setAgendas(data)
-      if (dataSelecionada) {
-        const str = formatarDataLocal(dataSelecionada)
-        const enc = data.find(a => a.data.split('T')[0] === str)
-        setHorariosEditando(enc?.horarios || [])
-      }
+    } finally {
+      setIsFetchingAgendas(false)
     }
   }
 
   async function carregarResumo() {
-    const res = await fetch(`/api/admin/agenda/resumo?t=${Date.now()}`)
-    if (res.ok) {
-      setResumo(await res.json())
+    setIsFetchingResumo(true)
+    try {
+      const res = await fetch(`/api/admin/agenda/resumo?t=${Date.now()}`)
+      if (res.ok) {
+        setResumo(await res.json())
+      }
+    } finally {
+      setIsFetchingResumo(false)
     }
   }
 
@@ -427,12 +450,15 @@ export default function AdminCalendarioPage() {
       </div>
 
       {/* Visão Geral (Confirmação Visual) */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 lg:p-8">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Painel de Controle - Datas Vigentes</h3>
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 lg:p-8 relative">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-3">
+          Painel de Controle - Datas Vigentes
+          {isFetchingResumo && <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />}
+        </h3>
         {resumo.length === 0 ? (
           <p className="text-sm text-slate-500 bg-white p-4 rounded-xl border border-slate-100">Não constam registros de liberação no calendário futuro.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 transition-opacity duration-300 ${isFetchingResumo ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
             {Object.entries(
               resumo.reduce((acc, item) => {
                 const str = item.data.split('T')[0]

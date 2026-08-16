@@ -17,8 +17,8 @@ export function CellLivre() {
 }
 
 interface CellReservaProps {
-  infoTexto: string;
-  subInfo: string;
+  infoTexto: React.ReactNode;
+  subInfo: React.ReactNode;
 }
 
 export function CellReserva({ infoTexto, subInfo }: CellReservaProps) {

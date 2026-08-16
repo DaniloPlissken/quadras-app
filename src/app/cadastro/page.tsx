@@ -15,7 +15,7 @@ export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', email: '', cpf: '', password: ''
+    name: '', email: '', cpf: '', telefone: '', password: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,11 +27,31 @@ export default function CadastroPage() {
       value = value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
     }
 
+    // Máscara de Telefone
+    if (name === 'telefone') {
+      value = value.replace(/\D/g, '');
+      if (value.length > 11) value = value.slice(0, 11);
+      if (value.length > 10) {
+        value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+      } else if (value.length > 6) {
+        value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+      } else if (value.length > 2) {
+        value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+      } else {
+        value = value.replace(/^(\d*)/, '($1');
+      }
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.telefone.replace(/\D/g, '').length < 10) {
+      toast.error('Telefone inválido.');
+      return;
+    }
 
     if (formData.password.trim().length === 0) {
       toast.error('A senha não pode ser vazia ou composta apenas por espaços.');
@@ -93,9 +113,15 @@ export default function CadastroPage() {
                   <Label>Nome Completo *</Label>
                   <Input name="name" value={formData.name} onChange={handleChange} required />
                 </div>
-                <div className="space-y-2">
-                  <Label>CPF *</Label>
-                  <Input name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00" required />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>CPF *</Label>
+                    <Input name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Telefone / WhatsApp *</Label>
+                    <Input name="telefone" value={formData.telefone} onChange={handleChange} placeholder="(00) 00000-0000" required />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>E-mail *</Label>
