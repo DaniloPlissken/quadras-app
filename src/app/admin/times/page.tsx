@@ -407,20 +407,20 @@ export default function AdminTimesPage() {
                       {time.responsaveis?.map((r, index) => (
                         <div key={r.id || index} className="flex flex-col gap-1 border-b border-slate-100 last:border-0 pb-2 last:pb-0">
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="font-semibold text-slate-700">{r.nome}</span>
-                            <span className="text-slate-400 font-mono">({formatarCPF(r.cpf)})</span>
+                            <span className="font-semibold text-slate-700">{r.pessoa?.nome}</span>
+                            <span className="text-slate-400 font-mono">({formatarCPF(r.pessoa?.cpf || '')})</span>
                           </div>
                           
                           {/* Links de Documentos */}
-                          {(r.urlComprovante || r.urlAntecedentes) && (
+                          {(r.pessoa?.urlComprovante || r.pessoa?.urlAntecedentes) && (
                             <div className="flex items-center gap-3 text-xs mt-0.5">
-                              {r.urlComprovante && (
-                                <a href={r.urlComprovante} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#004B87] hover:underline">
+                              {r.pessoa?.urlComprovante && (
+                                <a href={r.pessoa.urlComprovante} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#004B87] hover:underline">
                                   <FileText className="w-3 h-3" /> Comprovante
                                 </a>
                               )}
-                              {r.urlAntecedentes && (
-                                <a href={r.urlAntecedentes} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#004B87] hover:underline">
+                              {r.pessoa?.urlAntecedentes && (
+                                <a href={r.pessoa.urlAntecedentes} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#004B87] hover:underline">
                                   <FileText className="w-3 h-3" /> Antecedentes
                                 </a>
                               )}

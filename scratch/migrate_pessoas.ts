@@ -1,0 +1,96 @@
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  console.log('Iniciando migração de dados para a tabela Pessoa...')
+
+  // 1. Migrar Users existentes para Pessoa
+  const users = await prisma.user.findMany({
+    where: { pessoaId: null }
+  })
+
+  console.log(`Encontrados ${users.length} usuários para migrar.`)
+
+  for (const user of users) {
+    // Verificar se já existe pessoa com esse CPF
+    let pessoa = await prisma.pessoa.findUnique({
+      where: { cpf: user.id }
+    })
+
+    if (!pessoa) {
+      pessoa = await prisma.pessoa.create({
+        data: {
+          cpf: user.id, // O ID do user atual é o CPF
+          nome: user.name,
+          telefone: user.telefone || '',
+        }
+      })
+    }
+
+    // Vincular o User à Pessoa
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { pessoaId: pessoa.id }
+    })
+  }
+
+  // 2. Migrar ResponsavelTime existentes para Pessoa
+  const responsaveis = await prisma.responsavelTime.findMany({
+    where: { pessoaId: null }
+  })
+
+  console.log(`Encontrados ${responsaveis.length} responsáveis de time para migrar.`)
+
+  for (const resp of responsaveis) {
+    if (!resp.cpf) continue // Evita registros anômalos
+
+    let pessoa = await prisma.pessoa.findUnique({
+      where: { cpf: resp.cpf }
+    })
+
+    if (!pessoa) {
+      pessoa = await prisma.pessoa.create({
+        data: {
+          cpf: resp.cpf,
+          nome: resp.nome || '',
+          telefone: resp.telefone || '',
+          comprovanteResidencia: resp.comprovanteResidencia || false,
+          urlComprovante: resp.urlComprovante,
+          antecedentesCriminais: resp.antecedentesCriminais || false,
+          urlAntecedentes: resp.urlAntecedentes
+        }
+      })
+    } else {
+      // Se a pessoa já existe (pode ter vindo do User), atualizar os documentos caso os do responsável sejam mais ricos
+      if (resp.urlComprovante || resp.urlAntecedentes) {
+        await prisma.pessoa.update({
+          where: { id: pessoa.id },
+          data: {
+            comprovanteResidencia: resp.comprovanteResidencia || pessoa.comprovanteResidencia,
+            urlComprovante: resp.urlComprovante || pessoa.urlComprovante,
+            antecedentesCriminais: resp.antecedentesCriminais || pessoa.antecedentesCriminais,
+            urlAntecedentes: resp.urlAntecedentes || pessoa.urlAntecedentes
+          }
+        })
+      }
+    }
+
+    // Vincular ResponsavelTime à Pessoa
+    await prisma.responsavelTime.update({
+      where: { id: resp.id },
+      data: { pessoaId: pessoa.id }
+    })
+  }
+
+  console.log('Migração de dados concluída com sucesso!')
+}
+
+main()
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

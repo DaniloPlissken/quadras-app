@@ -22,7 +22,9 @@ export async function GET() {
   const times = await prisma.time.findMany({
     take: 500,
     include: {
-      responsaveis: true,
+      responsaveis: {
+        include: { pessoa: true }
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -56,7 +58,9 @@ export async function POST(request: Request) {
         status: { in: ['APTO', 'PENDENTE', 'SUSPENSO'] },
         responsaveis: {
           some: {
-            cpf: { in: cpfsTratados }
+            pessoa: {
+              cpf: { in: cpfsTratados }
+            }
           }
         }
       }
@@ -69,25 +73,43 @@ export async function POST(request: Request) {
       )
     }
 
-    const responsaveisTratados = responsaveis.map((r: ResponsavelInput) => ({
-      cpf: r.cpf.replace(/\D/g, ''),
-      nome: r.nome,
-      telefone: r.telefone,
-      comprovanteResidencia: r.comprovanteResidencia,
-      urlComprovante: r.urlComprovante,
-      antecedentesCriminais: r.antecedentesCriminais,
-      urlAntecedentes: r.urlAntecedentes
-    }))
+    const pessoasIds = []
+    for (const r of responsaveis) {
+      const cpfLimpo = r.cpf.replace(/\D/g, '')
+      const pessoa = await prisma.pessoa.upsert({
+        where: { cpf: cpfLimpo },
+        update: {
+          nome: r.nome,
+          telefone: r.telefone,
+          comprovanteResidencia: r.comprovanteResidencia,
+          urlComprovante: r.urlComprovante,
+          antecedentesCriminais: r.antecedentesCriminais,
+          urlAntecedentes: r.urlAntecedentes
+        },
+        create: {
+          cpf: cpfLimpo,
+          nome: r.nome,
+          telefone: r.telefone,
+          comprovanteResidencia: r.comprovanteResidencia || false,
+          urlComprovante: r.urlComprovante,
+          antecedentesCriminais: r.antecedentesCriminais || false,
+          urlAntecedentes: r.urlAntecedentes
+        }
+      })
+      pessoasIds.push(pessoa.id)
+    }
 
     const time = await prisma.time.create({
       data: {
         nome,
         responsaveis: {
-          create: responsaveisTratados,
+          create: pessoasIds.map(id => ({ pessoaId: id }))
         },
       },
       include: {
-        responsaveis: true,
+        responsaveis: {
+          include: { pessoa: true }
+        }
       },
     })
 

@@ -41,6 +41,8 @@ model User {
   reservas        Reserva[] @relation("ReservaUser")
   reservasCriadas Reserva[] @relation("ReservaOperador")
   timesConferidos Time[]    @relation("TimeConferidoPor")
+  pessoa          Pessoa?   @relation(fields: [pessoaId], references: [id])
+  pessoaId        String?   @unique
 }
 
 model PasswordResetToken {
@@ -105,19 +107,32 @@ model Time {
   createdAt             DateTime           @default(now())
 }
 
-model ResponsavelTime {
+model Pessoa {
   id                    String   @id @default(cuid())
-  cpf                   String
+  cpf                   String   @unique
   nome                  String
-  telefone              String
+  telefone              String?
   comprovanteResidencia Boolean  @default(false)
   urlComprovante        String?
   antecedentesCriminais Boolean  @default(false)
   urlAntecedentes       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User?
+  responsaveisTime      ResponsavelTime[]
+}
+
+model ResponsavelTime {
+  id                    String   @id @default(cuid())
+
+  pessoaId              String
   timeId                String
+
+  pessoa                Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
   time                  Time     @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
-  @@unique([cpf, timeId])
+  @@unique([pessoaId, timeId])
 }
 
 model Agenda {
