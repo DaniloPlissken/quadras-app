@@ -71,7 +71,7 @@ export function Header() {
             ))}
             {isAdmin && (
               <Link
-                href="/admin"
+                href="/admin/agenda-semanal"
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-blue-50/60 transition-all duration-200"
               >
                 Painel Admin
@@ -112,7 +112,7 @@ export function Header() {
 
                     {isAdmin && (
                       <Link
-                        href="/admin"
+                        href="/admin/agenda-semanal"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors"
                       >
@@ -171,7 +171,7 @@ export function Header() {
               ))}
               {isAdmin && (
                 <Link
-                  href="/admin"
+                  href="/admin/agenda-semanal"
                   onClick={() => setMobileOpen(false)}
                   className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-primary hover:bg-blue-50 transition-colors"
                 >
