@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, CalendarClock, Users, Map, Settings, ClipboardList } from "lucide-react";
 import { LogoutButton } from "@/components/admin/LogoutButton";
+import { SidebarNav } from "@/components/admin/SidebarNav";
 
 export default async function AdminLayout({
   children,
@@ -28,48 +29,7 @@ export default async function AdminLayout({
           <h2 className="text-xl font-bold">Admin FUTEL</h2>
           <p className="text-sm text-blue-200 mt-1">Parque do Sabiá</p>
         </div>
-        
-        <nav className="flex-1 py-4">
-          <ul className="space-y-1">
-
-            <li>
-              <Link href="/admin/agenda-semanal" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <Map className="w-5 h-5" />
-                <span>Agenda</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/reservas" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <ClipboardList className="w-5 h-5" />
-                <span>Gestão de Reservas</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/reservas/futebol" className="flex items-center gap-3 px-6 py-3 hover:bg-[#003666] bg-[#00407a] transition-colors border-l-4 border-emerald-400">
-                <LayoutDashboard className="w-5 h-5" />
-                <span>Reservas de Futebol</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/calendario" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <CalendarClock className="w-5 h-5" />
-                <span>Liberação de Horários</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/quadras" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <Settings className="w-5 h-5" />
-                <span>Gestão de Quadras</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/times" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <Users className="w-5 h-5" />
-                <span>Cadastro de Times</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        <SidebarNav />
 
         <div className="p-4 border-t border-white/10">
           <LogoutButton />

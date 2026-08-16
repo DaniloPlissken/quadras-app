@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Trash2, Loader2, Users, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { Plus, Trash2, Loader2, Users, CheckCircle, XCircle, FileText, Pencil } from 'lucide-react'
 
 type FormResponsavel = {
   cpf: string
@@ -44,6 +44,7 @@ export default function AdminTimesPage() {
   const [times, setTimes] = useState<Time[]>([])
   const [showForm, setShowForm] = useState(false)
   const [nome, setNome] = useState('')
+  const [editandoId, setEditandoId] = useState<string | null>(null)
   
   const initialResp: FormResponsavel = {
     cpf: '',
@@ -143,23 +144,27 @@ export default function AdminTimesPage() {
         ]
       }
 
-      // 3. Salvar time
+      const method = editandoId ? 'PUT' : 'POST'
+      const payloadWithId = editandoId ? { id: editandoId, ...payload } : payload
+
+      // 3. Salvar ou atualizar time
       const res = await fetch('/api/admin/times', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payloadWithId),
       })
 
       if (res.ok) {
-        toast.success('Time cadastrado com sucesso!')
+        toast.success(editandoId ? 'Time atualizado com sucesso!' : 'Time cadastrado com sucesso!')
         setNome('')
         setResp1(initialResp)
         setResp2(initialResp)
+        setEditandoId(null)
         setShowForm(false)
         carregarTimes()
       } else {
         const err = await res.json()
-        toast.error(err.error || 'Erro ao cadastrar time.')
+        toast.error(err.error || (editandoId ? 'Erro ao editar time.' : 'Erro ao cadastrar time.'))
       }
     } catch {
       toast.error('Erro ao processar arquivos ou salvar time.')
@@ -179,6 +184,48 @@ export default function AdminTimesPage() {
       const err = await res.json()
       toast.error(err.error || 'Erro ao excluir time.')
     }
+  }
+
+  function abrirEdicao(time: Time) {
+    setEditandoId(time.id)
+    setNome(time.nome)
+    
+    if (time.responsaveis.length > 0) {
+      const r1 = time.responsaveis[0].pessoa
+      setResp1({
+        cpf: r1.cpf,
+        nome: r1.nome,
+        telefone: r1.telefone || '',
+        comprovanteResidencia: r1.comprovanteResidencia,
+        urlComprovante: r1.urlComprovante || '',
+        antecedentesCriminais: r1.antecedentesCriminais,
+        urlAntecedentes: r1.urlAntecedentes || '',
+        fileComprovante: null,
+        fileAntecedentes: null
+      })
+    } else {
+      setResp1(initialResp)
+    }
+
+    if (time.responsaveis.length > 1) {
+      const r2 = time.responsaveis[1].pessoa
+      setResp2({
+        cpf: r2.cpf,
+        nome: r2.nome,
+        telefone: r2.telefone || '',
+        comprovanteResidencia: r2.comprovanteResidencia,
+        urlComprovante: r2.urlComprovante || '',
+        antecedentesCriminais: r2.antecedentesCriminais,
+        urlAntecedentes: r2.urlAntecedentes || '',
+        fileComprovante: null,
+        fileAntecedentes: null
+      })
+    } else {
+      setResp2(initialResp)
+    }
+
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function formatarCPF(cpf: string) {
@@ -310,7 +357,13 @@ export default function AdminTimesPage() {
           <p className="text-slate-500 mt-1">{times.length} time(s) cadastrado(s)</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setEditandoId(null)
+            setNome('')
+            setResp1(initialResp)
+            setResp2(initialResp)
+            setShowForm(!showForm)
+          }}
           className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95"
         >
           <Plus className="w-5 h-5" /> Cadastrar Time
@@ -324,7 +377,7 @@ export default function AdminTimesPage() {
         >
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Users className="w-5 h-5 text-[#004B87]" />
-            Novo Time e Responsáveis
+            {editandoId ? 'Editar Time e Responsáveis' : 'Novo Time e Responsáveis'}
           </h2>
           
           <div>
@@ -353,11 +406,14 @@ export default function AdminTimesPage() {
               className="bg-[#004B87] hover:bg-[#003865] text-white px-6 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all disabled:bg-slate-300"
             >
               {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
-              Salvar Cadastro
+              {editandoId ? 'Salvar Edição' : 'Salvar Cadastro'}
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false)
+                setEditandoId(null)
+              }}
               className="text-slate-500 hover:text-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium"
             >
               Cancelar
@@ -454,6 +510,13 @@ export default function AdminTimesPage() {
                         Conferir Time
                       </button>
                     )}
+                    <button
+                      onClick={() => abrirEdicao(time)}
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      title="Editar time"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => excluirTime(time.id, time.nome)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"

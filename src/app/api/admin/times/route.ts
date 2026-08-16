@@ -143,11 +143,108 @@ export async function DELETE(request: Request) {
     await prisma.time.delete({ where: { id } })
 
     return NextResponse.json({ ok: true })
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Erro ao remover time:', error)
     return NextResponse.json(
       { error: 'Erro ao remover time' },
       { status: 500 }
     )
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { id, nome, responsaveis } = body
+
+    if (!id || !nome || !responsaveis || !Array.isArray(responsaveis) || responsaveis.length !== 2) {
+      return NextResponse.json(
+        { error: 'ID, nome do time e dois responsáveis são obrigatórios.' },
+        { status: 400 }
+      )
+    }
+
+    // Tratar CPF: manter apenas os números
+    const cpfsTratados = responsaveis.map((r: ResponsavelInput) => r.cpf.replace(/\D/g, ''))
+    
+    // Validar se algum dos CPFs já está em um time APTO, PENDENTE ou SUSPENSO (ignorando este próprio time)
+    const timesConflitantes = await prisma.time.findFirst({
+      where: {
+        id: { not: id },
+        status: { in: ['APTO', 'PENDENTE', 'SUSPENSO'] },
+        responsaveis: {
+          some: {
+            pessoa: {
+              cpf: { in: cpfsTratados }
+            }
+          }
+        }
+      }
+    })
+
+    if (timesConflitantes) {
+      return NextResponse.json(
+        { error: 'Um ou mais CPFs informados já estão vinculados a outro time ativo.' },
+        { status: 400 }
+      )
+    }
+
+    const pessoasIds = []
+    for (const r of responsaveis) {
+      const cpfLimpo = r.cpf.replace(/\D/g, '')
+      const pessoa = await prisma.pessoa.upsert({
+        where: { cpf: cpfLimpo },
+        update: {
+          nome: r.nome,
+          telefone: r.telefone,
+          comprovanteResidencia: r.comprovanteResidencia,
+          urlComprovante: r.urlComprovante,
+          antecedentesCriminais: r.antecedentesCriminais,
+          urlAntecedentes: r.urlAntecedentes
+        },
+        create: {
+          cpf: cpfLimpo,
+          nome: r.nome,
+          telefone: r.telefone,
+          comprovanteResidencia: r.comprovanteResidencia || false,
+          urlComprovante: r.urlComprovante,
+          antecedentesCriminais: r.antecedentesCriminais || false,
+          urlAntecedentes: r.urlAntecedentes
+        }
+      })
+      pessoasIds.push(pessoa.id)
+    }
+
+    await prisma.responsavelTime.deleteMany({
+      where: { timeId: id }
+    });
+
+    const time = await prisma.time.update({
+      where: { id },
+      data: {
+        nome,
+        responsaveis: {
+          create: pessoasIds.map(pid => ({ pessoaId: pid }))
+        },
+      },
+      include: {
+        responsaveis: {
+          include: { pessoa: true }
+        }
+      },
+    })
+
+    return NextResponse.json(time)
+  } catch (error: any) {
+    console.error('Erro ao editar time:', error)
+    const message = error instanceof Error && error.message.includes('Unique')
+      ? 'Já existe um time com esse nome.'
+      : 'Erro ao editar time.'
+    return NextResponse.json({ error: message }, { status: 400 })
   }
 }
