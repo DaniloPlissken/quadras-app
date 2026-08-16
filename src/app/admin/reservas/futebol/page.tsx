@@ -41,6 +41,7 @@ export default function AdminReservaFutebolPage() {
   const [times, setTimes] = useState<Time[]>([])
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [reservasExistentes, setReservasExistentes] = useState<Reserva[]>([])
+  const [reservasDoTime, setReservasDoTime] = useState<{data: string}[]>([])
 
   const [quadraId, setQuadraId] = useState('')
   const [timeId, setTimeId] = useState('')
@@ -49,6 +50,19 @@ export default function AdminReservaFutebolPage() {
   
   const [isFetchingAgendas, setIsFetchingAgendas] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  function getSemanaRangeLocal(data: Date) {
+    const diaSemana = data.getDay() // 0=Dom, 1=Seg, ..., 6=Sáb
+    const inicio = new Date(data)
+    const diasAteSegunda = diaSemana === 0 ? 6 : diaSemana - 1
+    inicio.setDate(inicio.getDate() - diasAteSegunda)
+    inicio.setHours(0, 0, 0, 0)
+  
+    const fim = new Date(inicio)
+    fim.setDate(fim.getDate() + 6)
+    fim.setHours(23, 59, 59, 999)
+    return { inicio, fim }
+  }
 
   // 1. Carregar Quadras de Futebol e Times Aptos
   useEffect(() => {
@@ -87,7 +101,7 @@ export default function AdminReservaFutebolPage() {
         if (res.ok) {
           setAgendas(await res.json())
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         if (err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetchingAgendas(false)
@@ -109,7 +123,7 @@ export default function AdminReservaFutebolPage() {
         if (res.ok) {
           setReservasExistentes(await res.json())
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         if (err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetchingAgendas(false)
@@ -118,6 +132,25 @@ export default function AdminReservaFutebolPage() {
     carregarReservas()
     return () => controller.abort()
   }, [dataSelecionada, quadraId])
+
+  // 4. Carregar Reservas do Time para validação visual de Cota
+  useEffect(() => {
+    async function carregarReservasTime() {
+      if (!timeId) {
+        setReservasDoTime([])
+        return
+      }
+      try {
+        const res = await fetch(`/api/admin/reservas/futebol?timeId=${timeId}`)
+        if (res.ok) {
+          setReservasDoTime(await res.json())
+        }
+      } catch (err) {
+        console.error('Erro ao carregar reservas do time', err)
+      }
+    }
+    carregarReservasTime()
+  }, [timeId])
 
   // Lógica de Renderização de Calendário
   const datasDisponiveisStr = useMemo(() => agendas.map(a => a.data.split('T')[0]), [agendas])
@@ -129,6 +162,16 @@ export default function AdminReservaFutebolPage() {
 
   const slotsAtuais = agendaDoDia?.horarios || []
   const slotsOcupados = reservasExistentes.map(r => r.slot)
+
+  let timeJaReservouNestaSemana = false;
+  if (dataSelecionada && timeId) {
+    const { inicio, fim } = getSemanaRangeLocal(dataSelecionada);
+    timeJaReservouNestaSemana = reservasDoTime.some((r) => {
+      const [ano, mes, dia] = r.data.split('T')[0].split('-').map(Number);
+      const dataReserva = new Date(ano, mes - 1, dia);
+      return dataReserva >= inicio && dataReserva <= fim;
+    });
+  }
 
   async function realizarAgendamento() {
     if (!timeId) {
@@ -160,6 +203,10 @@ export default function AdminReservaFutebolPage() {
         // Atualizar reservas visíveis
         const resRefresh = await fetch(`/api/reservas?data=${formatarDataLocal(dataSelecionada)}&quadraId=${quadraId}`)
         if (resRefresh.ok) setReservasExistentes(await resRefresh.json())
+        
+        // Atualizar limite do time
+        const resTime = await fetch(`/api/admin/reservas/futebol?timeId=${timeId}`)
+        if (resTime.ok) setReservasDoTime(await resTime.json())
       } else {
         const err = await res.json()
         toast.error(err.error || 'Falha ao agendar.')
@@ -261,6 +308,12 @@ export default function AdminReservaFutebolPage() {
               ))}
             </div>
 
+            {timeJaReservouNestaSemana && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 font-medium">
+                Este time já possui uma reserva ativa para o fim de semana selecionado. Limite de 1 reserva por fim de semana.
+              </div>
+            )}
+
             {/* Renderização de Slots */}
             {dataSelecionada && slotsAtuais.length === 0 ? (
               <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border border-slate-100">
@@ -271,18 +324,21 @@ export default function AdminReservaFutebolPage() {
                 {slotsAtuais.map((slot) => {
                   const ocupado = slotsOcupados.includes(slot)
                   const selecionado = slot === slotSelecionado
+                  const bloqueado = timeJaReservouNestaSemana
 
                   return (
                     <button
                       key={slot}
-                      disabled={ocupado || isSubmitting}
+                      disabled={ocupado || isSubmitting || bloqueado}
                       onClick={() => setSlotSelecionado(slot)}
                       className={`group relative overflow-hidden rounded-xl p-4 text-left transition-all duration-300 border-2
                         ${ocupado 
                           ? 'bg-slate-100 border-slate-200 cursor-not-allowed opacity-70' 
-                          : selecionado
-                            ? 'bg-[#009A44]/10 border-[#009A44] shadow-md'
-                            : 'bg-white border-slate-200 hover:border-[#009A44] hover:shadow-lg cursor-pointer active:scale-95'
+                          : bloqueado
+                            ? 'bg-slate-50 border-slate-200 cursor-not-allowed opacity-80'
+                            : selecionado
+                              ? 'bg-[#009A44]/10 border-[#009A44] shadow-md'
+                              : 'bg-white border-slate-200 hover:border-[#009A44] hover:shadow-lg cursor-pointer active:scale-95'
                         }
                       `}
                     >
@@ -293,12 +349,14 @@ export default function AdminReservaFutebolPage() {
                         <span className={`text-xs font-semibold px-2 py-1 rounded-full uppercase tracking-wider
                           ${ocupado 
                             ? 'bg-slate-200 text-slate-600' 
-                            : selecionado
-                              ? 'bg-[#009A44] text-white'
-                              : 'bg-slate-100 text-slate-600'
+                            : bloqueado
+                              ? 'bg-slate-200 text-slate-500'
+                              : selecionado
+                                ? 'bg-[#009A44] text-white'
+                                : 'bg-slate-100 text-slate-600'
                           }
                         `}>
-                          {ocupado ? 'Ocupado' : selecionado ? 'Selecionado' : 'Livre'}
+                          {ocupado ? 'Ocupado' : bloqueado ? 'Bloqueado' : selecionado ? 'Selecionado' : 'Livre'}
                         </span>
                       </div>
                     </button>

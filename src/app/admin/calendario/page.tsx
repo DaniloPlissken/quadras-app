@@ -144,7 +144,7 @@ export default function AdminCalendarioPage() {
             setHorariosEditando(enc?.horarios || [])
           }
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         if (err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetchingAgendas(false)
@@ -163,7 +163,7 @@ export default function AdminCalendarioPage() {
         if (res.ok) {
           setResumo(await res.json())
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         if (err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetchingResumo(false)

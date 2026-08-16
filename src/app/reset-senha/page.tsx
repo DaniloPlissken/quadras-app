@@ -50,7 +50,7 @@ function ResetSenhaForm() {
 
       setSucesso(true);
       toast.success('Senha atualizada com sucesso!');
-    } catch (err: unknown) {
+    } catch (err: any) {
       toast.error(err.message || 'Erro ao redefinir a senha.');
     } finally {
       setLoading(false);

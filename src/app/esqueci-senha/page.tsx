@@ -42,7 +42,7 @@ export default function EsqueciSenhaPage() {
 
       setEmailEnviado(data.email);
       toast.success('Link de recuperação enviado com sucesso!');
-    } catch (err: unknown) {
+    } catch (err: any) {
       toast.error(err.message || 'Erro ao processar solicitação.');
     } finally {
       setLoading(false);

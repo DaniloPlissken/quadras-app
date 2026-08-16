@@ -93,7 +93,7 @@ export default function AdminReservasPage() {
           const data = await res.json()
           setReservas(data)
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         if (err.name !== 'AbortError') {
           console.error('Erro ao buscar reservas:', err)
         }

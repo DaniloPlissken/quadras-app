@@ -23,6 +23,36 @@ function getSemanaRange(data: Date): { inicio: Date; fim: Date } {
   return { inicio, fim }
 }
 
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const timeId = searchParams.get('timeId')
+
+  if (!timeId) {
+    return NextResponse.json({ error: 'timeId é obrigatório' }, { status: 400 })
+  }
+
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+
+  const reservas = await prisma.reserva.findMany({
+    where: {
+      timeId,
+      status: { not: 'CANCELADA_ADMIN' },
+    },
+    select: {
+      id: true,
+      data: true,
+      slot: true,
+      quadraId: true,
+      timeId: true,
+    }
+  })
+
+  return NextResponse.json(reservas)
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
