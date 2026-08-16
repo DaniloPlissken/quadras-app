@@ -28,133 +28,131 @@ export function Header() {
   const isAdmin = session?.user?.role === 'ADMIN';
 
   return (
-    <header className="w-full font-sans sticky top-0 z-50">
-      {/* Thin accent stripe */}
-      <div className="h-1 bg-gradient-to-r from-primary via-secondary to-accent" />
+    <header className="w-full font-sans sticky top-0 z-50 bg-white">
+      {/* Barra Azul Superior (Prefeitura) */}
+      <div className="h-2.5 bg-[#004B87]" />
 
       {/* Main bar */}
-      <div className="bg-white border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between h-16">
-          {/* Left: Logo + FUTEL label */}
-          <Link href="/" className="flex items-center gap-3 shrink-0">
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-stretch justify-between h-28">
+          {/* Left: Logo */}
+          <Link href="/" className="flex items-center shrink-0 pr-6">
             <Image
-              src="/logo-prefeitura.png"
+              src="/logo-prefeitura-hd.png"
               alt="Prefeitura de Uberlândia"
-              width={160}
-              height={40}
-              className="h-10 w-auto object-contain"
+              width={350}
+              height={100}
+              className="h-20 w-auto object-contain"
               priority
             />
-            <div className="hidden sm:flex flex-col leading-tight">
-              <span className="text-[11px] font-bold tracking-wider text-primary uppercase">
-                FUTEL
-              </span>
-              <span className="text-[10px] text-slate-500 font-medium">
-                Portal de Quadras
-              </span>
-            </div>
           </Link>
 
-          {/* Center: Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {[
-              { href: '/', label: 'Início' },
-              { href: '/reservas', label: 'Agendar Quadras' },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-blue-50/60 transition-all duration-200"
-              >
-                {item.label}
-              </Link>
-            ))}
-            {isAdmin && (
-              <Link
-                href="/admin/agenda-semanal"
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-blue-50/60 transition-all duration-200"
-              >
-                Painel Admin
-              </Link>
-            )}
-          </nav>
+          {/* Right side: Top utils + Main Nav */}
+          <div className="hidden md:flex flex-col flex-1 justify-center">
+            {/* Top Utils Spacer */}
+            <div className="flex justify-end items-center pb-1 border-b border-slate-200 min-h-[24px]"></div>
 
-          {/* Right: User area */}
-          <div className="flex items-center gap-3">
-            {session?.user ? (
-              /* Logged in user */
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors duration-200"
-                >
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                    {userInitial}
-                  </div>
-                  <div className="hidden md:flex flex-col items-start leading-tight">
-                    <span className="text-sm font-semibold text-slate-700 max-w-[140px] truncate">
-                      {userName}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {isAdmin ? 'Administrador' : 'Cidadão'}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 hidden md:block transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
+            {/* Bottom Nav */}
+            <div className="flex items-center justify-between pt-1.5">
+              <nav className="flex items-center gap-6">
+                {[
+                  { href: '/', label: 'Início' },
+                  { href: '/reservas', label: 'Agendar Quadras' },
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="text-[13px] font-bold text-[#004B87] uppercase hover:text-[#00A0E3] transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                {isAdmin && (
+                  <Link
+                    href="/admin/agenda-semanal"
+                    className="text-[13px] font-bold text-[#009A44] uppercase hover:text-[#007f38] transition-colors"
+                  >
+                    Painel Admin
+                  </Link>
+                )}
+              </nav>
 
-                {/* Dropdown menu */}
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200/80 py-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                    <div className="px-4 py-2.5 border-b border-slate-100">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{session.user.email}</p>
-                    </div>
-
-                    {isAdmin && (
-                      <Link
-                        href="/admin/agenda-semanal"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors"
-                      >
-                        <User className="w-4 h-4" />
-                        Painel Admin
-                      </Link>
-                    )}
-
+              {/* User area */}
+              <div className="flex items-center gap-3 pl-6">
+                {session?.user ? (
+                  <div className="relative" ref={userMenuRef}>
                     <button
-                      onClick={() => signOut({ callbackUrl: '/login' })}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      className="flex items-center gap-2.5 pl-2 pr-3 py-1 rounded-full hover:bg-slate-100 transition-colors"
                     >
-                      <LogOut className="w-4 h-4" />
-                      Sair da conta
+                      <div className="w-7 h-7 rounded-full bg-[#004B87] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                        {userInitial}
+                      </div>
+                      <div className="flex flex-col items-start leading-tight">
+                        <span className="text-xs font-bold text-[#004B87] max-w-[120px] truncate uppercase">
+                          {userName}
+                        </span>
+                      </div>
+                      <ChevronDown className={`w-3.5 h-3.5 text-[#004B87] transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
+
+                    {/* Dropdown menu */}
+                    {userMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 animate-in fade-in slide-in-from-top-1">
+                        <div className="px-4 py-2.5 border-b border-slate-100">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{session.user.email}</p>
+                        </div>
+
+                        {isAdmin && (
+                          <Link
+                            href="/admin/agenda-semanal"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-[#004B87] transition-colors"
+                          >
+                            <User className="w-4 h-4" />
+                            Painel Admin
+                          </Link>
+                        )}
+
+                        <button
+                          onClick={() => signOut({ callbackUrl: '/login' })}
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sair da conta
+                        </button>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-white bg-[#004B87] hover:bg-[#003666] transition-all uppercase shadow-sm"
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    Entrar
+                  </Link>
                 )}
               </div>
-            ) : (
-              /* Not logged in */
-              <Link
-                href="/login"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all duration-200"
-              >
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Entrar</span>
-              </Link>
-            )}
+            </div>
+          </div>
 
-            {/* Mobile menu toggle */}
+          {/* Mobile menu toggle */}
+          <div className="md:hidden flex items-center">
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-lg text-[#004B87] hover:bg-slate-100 transition-colors"
             >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-white animate-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden border-t border-slate-100 bg-white animate-in slide-in-from-top-2">
+
             <nav className="px-4 py-3 space-y-1">
               {[
                 { href: '/', label: 'Início' },
@@ -164,7 +162,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-primary transition-colors"
+                  className="block px-4 py-2.5 rounded-lg text-sm font-bold text-[#004B87] hover:bg-blue-50 uppercase"
                 >
                   {item.label}
                 </Link>
@@ -173,12 +171,25 @@ export function Header() {
                 <Link
                   href="/admin/agenda-semanal"
                   onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-primary hover:bg-blue-50 transition-colors"
+                  className="block px-4 py-2.5 rounded-lg text-sm font-bold text-[#009A44] hover:bg-green-50 uppercase"
                 >
                   Painel Admin
                 </Link>
               )}
             </nav>
+            {/* Mobile Auth Button */}
+            {!session?.user && (
+              <div className="px-4 py-3 border-t border-slate-100">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#004B87] hover:bg-[#003666] uppercase"
+                >
+                  <User className="w-4 h-4" />
+                  Entrar
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
