@@ -22,8 +22,8 @@ export async function POST(request: Request) {
       include: { user: true }
     });
 
-    if (!reserva || !reserva.user) {
-      return NextResponse.json({ error: 'Reserva ou usuário não encontrados.' }, { status: 404 });
+    if (!reserva || !reserva.user || !reserva.user.email) {
+      return NextResponse.json({ error: 'Reserva não encontrada ou não possui e-mail vinculado.' }, { status: 404 });
     }
 
     await enviarEmailMensagemAdmin(reserva.user.email, mensagem);

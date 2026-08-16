@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2, Loader2, Users, CheckCircle, XCircle, FileText } from 'lucide-react'
 
-type Responsavel = {
-  id?: string
+type FormResponsavel = {
   cpf: string
   nome: string
   telefone: string
@@ -13,6 +12,21 @@ type Responsavel = {
   urlComprovante?: string
   antecedentesCriminais: boolean
   urlAntecedentes?: string
+  fileComprovante: File | null
+  fileAntecedentes: File | null
+}
+
+type ResponsavelResponse = {
+  id: string
+  pessoa: {
+    cpf: string
+    nome: string
+    telefone: string
+    comprovanteResidencia: boolean
+    urlComprovante?: string
+    antecedentesCriminais: boolean
+    urlAntecedentes?: string
+  }
 }
 
 type Time = {
@@ -23,12 +37,7 @@ type Time = {
   conferidoEm?: string
   conferidoPorId?: string
   createdAt: string
-  responsaveis: Responsavel[]
-}
-
-type FormResponsavel = Omit<Responsavel, 'id'> & {
-  fileComprovante: File | null
-  fileAntecedentes: File | null
+  responsaveis: ResponsavelResponse[]
 }
 
 export default function AdminTimesPage() {

@@ -19,11 +19,12 @@ export type ReservaExport = {
   slot: string
   status: string
   quadraId: string
-  user: { id: string; name: string; email: string; telefone?: string }
+  user?: { id: string; name: string; email: string; telefone?: string } | null
+  operador?: { name: string } | null
   time?: {
     id: string
     nome: string
-    responsaveis: { nome: string; cpf: string; telefone: string }[]
+    responsaveis: { pessoa: { nome: string; cpf: string; telefone: string } }[]
   }
 }
 
@@ -96,14 +97,19 @@ export function prepareExportData(
         if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
           tipo = 'Time';
           clienteTime = reserva.time.nome.toUpperCase();
-          const resp = reserva.time.responsaveis[0];
+          const resp = reserva.time.responsaveis[0].pessoa;
           cpf = resp.cpf;
           telefone = resp.telefone || '';
-        } else {
+        } else if (reserva.user) {
           tipo = 'Pessoal';
           clienteTime = reserva.user.name.toUpperCase();
           cpf = reserva.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
           telefone = reserva.user.telefone || '';
+        } else {
+          tipo = 'Admin';
+          clienteTime = reserva.operador?.name ? `Operador: ${reserva.operador.name.toUpperCase()}` : 'N/A';
+          cpf = '';
+          telefone = '';
         }
 
         rows.push({
@@ -316,14 +322,16 @@ export async function downloadExcel(
       if (reserva) {
         let texto = `${colDef.quadra.nome.toUpperCase()}`;
         if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
-          const resp = reserva.time.responsaveis[0];
+          const resp = reserva.time.responsaveis[0].pessoa;
           texto += `\n${reserva.time.nome.toUpperCase()}\nCPF: ${resp.cpf}\nTEF: ${resp.telefone || ''}`;
-        } else {
+        } else if (reserva.user) {
           const cpf = reserva.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
           texto += `\n${reserva.user.name.toUpperCase()}\nCPF: ${cpf}`;
           if (reserva.user.telefone) {
             texto += `\nTEF: ${reserva.user.telefone}`;
           }
+        } else {
+          texto += `\n${reserva.operador?.name ? `Operador: ${reserva.operador.name.toUpperCase()}` : 'N/A'}`;
         }
         texto += `\nSlot: ${slot}`;
         

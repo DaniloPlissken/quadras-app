@@ -69,7 +69,7 @@ export async function GET(req: Request) {
       user: { select: { id: true, name: true, email: true, telefone: true } },
       time: {
         include: {
-          responsaveis: true
+          responsaveis: { include: { pessoa: true } }
         }
       }
     }

@@ -24,8 +24,9 @@ type Reserva = {
   quadra: { nome: string; modalidade: { nome: string } }
   time?: {
     nome: string
-    responsaveis: { nome: string; telefone: string }[]
+    responsaveis: { pessoa: { nome: string; telefone: string } }[]
   }
+  operador?: { name: string }
 }
 
 export default function AdminReservasPage() {
@@ -92,7 +93,7 @@ export default function AdminReservasPage() {
           const data = await res.json()
           setReservas(data)
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.name !== 'AbortError') {
           console.error('Erro ao buscar reservas:', err)
         }
@@ -198,12 +199,12 @@ export default function AdminReservasPage() {
       const isTime = !!r.time
       const tipo = isTime ? 'Time' : 'Cidadão'
       
-      let responsavel = r.user.name
-      let contato = r.user.email
+      let responsavel = r.user?.name || (r.operador ? `Operador: ${r.operador.name}` : 'N/A')
+      let contato = r.user?.email || 'Sem e-mail'
 
       if (r.time && r.time.responsaveis.length > 0) {
-        responsavel = r.time.responsaveis[0].nome
-        contato = `Time: ${r.time.nome} | Tel: ${r.time.responsaveis[0].telefone || ''}`
+        responsavel = r.time.responsaveis[0].pessoa.nome
+        contato = `Time: ${r.time.nome} | Tel: ${r.time.responsaveis[0].pessoa.telefone || ''}`
       }
 
       return [
@@ -264,7 +265,14 @@ export default function AdminReservasPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 no-print">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Gestão de Reservas</h1>
-          <p className="text-slate-500 mt-1">{reservas.length} reserva(s) encontrada(s)</p>
+          <p className="text-slate-500 mt-1 flex items-center gap-2">
+            {reservas.length} reserva(s) encontrada(s)
+            {(!filtroDataInicio && !filtroDataFim && reservas.length === 1000) && (
+              <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                LIMITE: 1000 RECENTES
+              </span>
+            )}
+          </p>
         </div>
         
         <div className="flex gap-3">
@@ -412,12 +420,12 @@ export default function AdminReservasPage() {
                   const isTime = !!r.time
                   const tipoTexto = isTime ? 'Time' : 'Cidadão'
                   
-                  let responsavelNome = r.user.name
-                  let responsavelSub = r.user.email
+                  let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
+                  let responsavelSub = r.user?.email || 'Sem e-mail'
 
                   if (r.time && r.time.responsaveis.length > 0) {
                     responsavelNome = r.time.nome
-                    responsavelSub = `Resp: ${r.time.responsaveis[0].nome}`
+                    responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
                   }
 
                   return (
@@ -455,18 +463,20 @@ export default function AdminReservasPage() {
                       </span>
                     </td>
                     <td className="p-4 text-right no-print flex justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setReservaSelecionada(r)
-                          setMensagemTexto('')
-                          setMensagemModalOpen(true)
-                        }}
-                        className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-transparent hover:border-blue-200"
-                        title="Enviar E-mail"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        Mensagem
-                      </button>
+                      {r.user?.email && (
+                        <button
+                          onClick={() => {
+                            setReservaSelecionada(r)
+                            setMensagemTexto('')
+                            setMensagemModalOpen(true)
+                          }}
+                          className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-transparent hover:border-blue-200"
+                          title="Enviar E-mail"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Mensagem
+                        </button>
+                      )}
 
                       {r.status === 'CONFIRMADA' && (
                         <button
@@ -509,7 +519,7 @@ export default function AdminReservasPage() {
               <div className="bg-slate-50 p-3 rounded-lg text-xs font-mono text-slate-600">
                 Reserva: {reservaSelecionada.quadra.nome} - {formatDataCivilBR(reservaSelecionada.data)} às {reservaSelecionada.slot}
                 <br/>
-                Para: {reservaSelecionada.user.name} ({reservaSelecionada.user.email})
+                Para: {reservaSelecionada.user?.name || 'Time/Cidadão'} ({reservaSelecionada.user?.email || 'Sem e-mail'})
               </div>
             )}
             <Textarea 

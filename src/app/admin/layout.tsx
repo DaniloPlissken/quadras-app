@@ -45,6 +45,12 @@ export default async function AdminLayout({
               </Link>
             </li>
             <li>
+              <Link href="/admin/reservas/futebol" className="flex items-center gap-3 px-6 py-3 hover:bg-[#003666] bg-[#00407a] transition-colors border-l-4 border-emerald-400">
+                <LayoutDashboard className="w-5 h-5" />
+                <span>Reservas de Futebol</span>
+              </Link>
+            </li>
+            <li>
               <Link href="/admin/calendario" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
                 <CalendarClock className="w-5 h-5" />
                 <span>Liberação de Horários</span>

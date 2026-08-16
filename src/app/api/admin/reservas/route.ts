@@ -59,15 +59,18 @@ export async function GET(request: Request) {
     } as any
   }
 
+  const takeLimit = (!dataInicioStr && !dataFimStr) ? 1000 : undefined;
+
   const reservas = await prisma.reserva.findMany({
     where,
-    take: 1000,
     include: {
       user: { select: { name: true, email: true } }, // Sem 'id' para proteger CPF
       quadra: { include: { modalidade: true } },
-      time: { include: { responsaveis: true } }
+      time: { include: { responsaveis: { include: { pessoa: true } } } },
+      operador: { select: { name: true } }
     },
     orderBy: [{ data: 'desc' }, { slot: 'asc' }],
+    ...(takeLimit ? { take: takeLimit } : {})
   })
 
   return NextResponse.json(reservas)
@@ -104,19 +107,23 @@ export async function PATCH(request: Request) {
 
     if (status === 'CANCELADA_ADMIN') {
       try {
-        const { enviarEmailCancelamentoAdmin } = await import('@/lib/mail');
-        const formatShort = (d: Date) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
-        
-        const motivoEnvio = motivo || "Reserva cancelada pela equipe de administração sem motivo específico definido.";
+        if (reserva.user && reserva.user.email) {
+          const { enviarEmailCancelamentoAdmin } = await import('@/lib/mail');
+          const formatShort = (d: Date) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+          
+          const motivoEnvio = motivo || "Reserva cancelada pela equipe de administração sem motivo específico definido.";
 
-        await enviarEmailCancelamentoAdmin(
-          reserva.user.email,
-          reserva.user.name,
-          reserva.quadra.nome,
-          formatShort(reserva.data),
-          reserva.slot,
-          motivoEnvio
-        );
+          await enviarEmailCancelamentoAdmin(
+            reserva.user.email,
+            reserva.user.name,
+            reserva.quadra.nome,
+            formatShort(reserva.data),
+            reserva.slot,
+            motivoEnvio
+          );
+        } else {
+          console.log('Reserva cancelada, mas não há usuário com e-mail para notificar (ex: reserva de time).');
+        }
       } catch (e) {
         console.error('Falha ao enviar e-mail de cancelamento admin:', e);
       }

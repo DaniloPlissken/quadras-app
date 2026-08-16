@@ -20,9 +20,11 @@ type Agenda = {
 }
 
 type Responsavel = {
-  nome: string
-  cpf: string
-  telefone: string
+  pessoa: {
+    nome: string
+    cpf: string
+    telefone: string
+  }
 }
 
 type Time = {
@@ -114,7 +116,7 @@ export default function AgendaSemanalPage() {
           setAgendas(data.agendas || [])
           setReservas(data.reservas || [])
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.name !== 'AbortError') {
           console.error('Erro ao buscar agenda da semana:', err)
         }
@@ -406,7 +408,7 @@ export default function AgendaSemanalPage() {
                             }
 
                             // Célula com Reserva
-                            const telClean = reserva.time ? (reserva.time.responsaveis[0]?.telefone || '') : (reserva.user.telefone || '')
+                            const telClean = reserva.time ? (reserva.time.responsaveis[0]?.pessoa?.telefone || '') : (reserva.user?.telefone || '')
                             const telDisplay = telClean ? (
                               <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a>
                             ) : (
@@ -417,16 +419,16 @@ export default function AgendaSemanalPage() {
                             let subInfo: React.ReactNode = ''
                             
                             if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
-                              const resp = reserva.time.responsaveis[0]
+                              const resp = reserva.time.responsaveis[0].pessoa
                               infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
                               subInfo = (
                                 <div className="flex flex-col gap-0.5">
-                                  <span>Resp: {resp.nome.toUpperCase()}</span>
+                                  <span>Resp: {resp?.nome?.toUpperCase() || ''}</span>
                                   <span>Tel: {telDisplay}</span>
                                 </div>
                               )
                             } else {
-                              infoTexto = reserva.user.name.toUpperCase()
+                              infoTexto = reserva.user?.name?.toUpperCase() || 'ADMIN'
                               subInfo = <span>Tel: {telDisplay}</span>
                             }
 
@@ -503,7 +505,7 @@ export default function AgendaSemanalPage() {
                             const reserva = reservasMap.get(`${dataStr}-${slot}-${quadra.id}`)
                             if (!reserva) return <td key={`${dataStr}-${quadra.id}`} className="bg-white border border-slate-200"></td>
                             
-                            const telClean = reserva.time ? (reserva.time.responsaveis[0]?.telefone || '') : (reserva.user.telefone || '')
+                            const telClean = reserva.time ? (reserva.time.responsaveis[0]?.pessoa?.telefone || '') : (reserva.user?.telefone || '')
                             const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
                             
                             let infoTexto: React.ReactNode = ''
@@ -511,9 +513,9 @@ export default function AgendaSemanalPage() {
                             
                             if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
                               infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
-                              subInfo = <div className="flex flex-col gap-0.5"><span>Resp: {reserva.time.responsaveis[0].nome.toUpperCase()}</span><span>Tel: {telDisplay}</span></div>
+                              subInfo = <div className="flex flex-col gap-0.5"><span>Resp: {reserva.time.responsaveis[0].pessoa?.nome?.toUpperCase() || ''}</span><span>Tel: {telDisplay}</span></div>
                             } else {
-                              infoTexto = reserva.user.name.toUpperCase()
+                              infoTexto = reserva.user?.name?.toUpperCase() || 'ADMIN'
                               subInfo = <span>Tel: {telDisplay}</span>
                             }
 
