@@ -101,8 +101,8 @@ export default function AdminReservaFutebolPage() {
         if (res.ok) {
           setAgendas(await res.json())
         }
-      } catch (err: any) {
-        if (err.name !== 'AbortError') console.error(err)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetchingAgendas(false)
       }
@@ -123,8 +123,8 @@ export default function AdminReservaFutebolPage() {
         if (res.ok) {
           setReservasExistentes(await res.json())
         }
-      } catch (err: any) {
-        if (err.name !== 'AbortError') console.error(err)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetchingAgendas(false)
       }

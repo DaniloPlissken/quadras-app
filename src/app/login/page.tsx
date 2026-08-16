@@ -55,7 +55,7 @@ export default function LoginPage() {
               <Shield className="w-6 h-6 text-[#004B87]" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-800">Acesso Restrito</CardTitle>
+          <CardTitle className="text-2xl font-bold text-slate-800">Bem-vindo(a)!</CardTitle>
           <CardDescription>
             Portal de Serviços - FUTEL Uberlândia
           </CardDescription>
@@ -75,12 +75,7 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="password">Senha</Label>
-                <Link href="/esqueci-senha" className="text-sm text-[#004B87] hover:underline">
-                  Esqueceu a senha?
-                </Link>
-              </div>
+              <Label htmlFor="password">Senha</Label>
               <Input 
                 id="password" 
                 type="password" 
@@ -88,6 +83,11 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required 
               />
+              <div className="flex justify-end pt-1">
+                <Link href="/esqueci-senha" className="text-sm text-[#004B87] hover:underline">
+                  Esqueceu a senha?
+                </Link>
+              </div>
             </div>
 
             <Button 

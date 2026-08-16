@@ -116,8 +116,8 @@ export default function AgendaSemanalPage() {
           setAgendas(data.agendas || [])
           setReservas(data.reservas || [])
         }
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') {
           console.error('Erro ao buscar agenda da semana:', err)
         }
       } finally {

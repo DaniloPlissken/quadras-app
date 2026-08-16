@@ -143,7 +143,7 @@ export async function DELETE(request: Request) {
     await prisma.time.delete({ where: { id } })
 
     return NextResponse.json({ ok: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao remover time:', error)
     return NextResponse.json(
       { error: 'Erro ao remover time' },
@@ -240,7 +240,7 @@ export async function PUT(request: Request) {
     })
 
     return NextResponse.json(time)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao editar time:', error)
     const message = error instanceof Error && error.message.includes('Unique')
       ? 'Já existe um time com esse nome.'

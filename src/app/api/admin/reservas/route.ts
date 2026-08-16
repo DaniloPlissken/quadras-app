@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   const where: Prisma.ReservaWhereInput = {}
 
   if (statusFiltro && statusFiltro !== 'todas') {
-    where.status = statusFiltro as any
+    where.status = statusFiltro as Prisma.EnumReservaStatusFilter
   } else {
     // Se não especificar status, podemos trazer apenas as ativas ou todas? 
     // Por padrão (legado), vamos excluir as canceladas a menos que o status seja explicitamente selecionado.
@@ -54,9 +54,9 @@ export async function GET(request: Request) {
 
   if (modalidadeFiltro && modalidadeFiltro !== 'todas') {
     where.quadra = {
-      ...(where.quadra || {}),
+      ...(typeof where.quadra === 'object' ? where.quadra : {}),
       modalidade: { nome: modalidadeFiltro }
-    } as any
+    } as Prisma.QuadraWhereInput
   }
 
   const takeLimit = (!dataInicioStr && !dataFimStr) ? 1000 : undefined;

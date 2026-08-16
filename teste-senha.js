@@ -1,5 +1,5 @@
 // teste-senha.js
-/* eslint-disable @typescript-eslint/no-require-imports */
+ 
 console.log('🧪 Iniciando teste lógico de Validação de Senha...');
 
 function validarSenhaMock(password) {

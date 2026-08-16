@@ -88,7 +88,7 @@ export function prepareExportData(
            continue;
         }
 
-        let status = 'Reservado';
+        const status = 'Reservado';
         let tipo = '';
         let clienteTime = '';
         let cpf = '';

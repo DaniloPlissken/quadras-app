@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+ 
 console.log('🧪 Iniciando teste de limite de bytes (UTF-8)...');
 
 function validarTamanho(password) {

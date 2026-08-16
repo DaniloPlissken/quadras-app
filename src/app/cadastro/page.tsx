@@ -81,7 +81,7 @@ export default function CadastroPage() {
 
       toast.success('Cadastro realizado com sucesso!');
       router.push('/login');
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao realizar cadastro';
       toast.error(message);
     } finally {

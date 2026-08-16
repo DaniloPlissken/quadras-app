@@ -109,8 +109,8 @@ export default function ReservaModalidadePage() {
         const res = await fetch(`/api/agenda?quadraId=${quadraId}`, { signal: controller.signal })
         const data = await res.json()
         setAgendas(data)
-      } catch (err: any) {
-        if (err.name !== 'AbortError') console.error(err)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetching(false)
       }
@@ -135,8 +135,8 @@ export default function ReservaModalidadePage() {
         )
         const data = await res.json()
         setReservas(data)
-      } catch (err: any) {
-        if (err.name !== 'AbortError') console.error(err)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') console.error(err)
       } finally {
         setIsFetching(false)
       }
