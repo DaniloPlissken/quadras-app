@@ -105,9 +105,9 @@ export default function AdminQuadrasPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Gestão de Quadras</h1>
+          <h1 className="hidden md:block text-3xl font-bold text-slate-800">Gestão de Quadras</h1>
           <p className="text-slate-500 mt-1">{quadras.length} quadra(s) cadastrada(s)</p>
         </div>
         <button
@@ -117,7 +117,7 @@ export default function AdminQuadrasPage() {
             }
             setShowForm(!showForm)
           }}
-          className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95"
+          className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap self-start md:self-auto"
         >
           <Plus className="w-5 h-5" /> Nova Quadra / Campo
         </button>

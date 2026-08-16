@@ -234,7 +234,7 @@ export default function AgendaSemanalPage() {
       <div className="no-print space-y-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">Agenda Geral</h1>
+            <h1 className="hidden md:block text-3xl font-bold text-slate-800">Agenda Geral</h1>
             <p className="text-slate-500 mt-1">Ocupação das quadras e campos.</p>
           </div>
           
@@ -245,7 +245,7 @@ export default function AgendaSemanalPage() {
                 type="date"
                 value={dataBase}
                 onChange={e => setDataBase(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[160px]"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[160px]"
               />
             </div>
 
@@ -257,7 +257,7 @@ export default function AgendaSemanalPage() {
                   setModalidadeSelecionada(e.target.value)
                   setQuadraSelecionada('todas') // Reseta a quadra ao mudar modalidade
                 }}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
               >
                 <option value="todas">Todas</option>
                 {modalidades.map(mod => (
@@ -271,7 +271,7 @@ export default function AgendaSemanalPage() {
               <select
                 value={quadraSelecionada}
                 onChange={e => setQuadraSelecionada(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
               >
                 <option value="todas">Todas</option>
                 {todasQuadras
@@ -336,24 +336,90 @@ export default function AgendaSemanalPage() {
           </div>
         ) : (
           <div className={`transition-opacity duration-300 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
-            <div className="space-y-12">
+            
+            {/* Mobile Cards View */}
+            <div className="md:hidden print:hidden flex flex-col divide-y divide-slate-100 mb-6">
+              {reservas.filter(r => quadrasFiltradas.some(q => q.id === r.quadraId)).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime() || a.slot.localeCompare(b.slot)).map((r) => {
+                const isTime = !!r.time
+                const tipoTexto = isTime ? 'Time' : 'Cidadão'
+                const quadra = todasQuadras.find(q => q.id === r.quadraId)
+                if (!quadra) return null;
+                
+                let responsavelNome = r.user?.name || 'N/A'
+                let responsavelSub = r.user?.email || 'Sem e-mail'
+
+                if (r.time && r.time.responsaveis && r.time.responsaveis.length > 0) {
+                  responsavelNome = r.time.nome
+                  responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa?.nome || ''}`
+                }
+
+                return (
+                  <div key={r.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-slate-800 text-base">{quadra.nome}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wide">{quadra.modalidade.nome}</div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        r.status === 'CONFIRMADA'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : r.status === 'CONCLUIDA'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {r.status === 'CONFIRMADA' ? 'Confirmada' : r.status === 'CONCLUIDA' ? 'Concluída' : 'Cancelada'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-slate-800">
+                        {r.data.split('T')[0].split('-').reverse().join('/')}
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap inline-block">
+                        {r.slot}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col gap-1 mt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-sm truncate pr-2">{responsavelNome}</span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'}`}>
+                          {tipoTexto}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500 truncate" title={responsavelSub}>{responsavelSub}</span>
+                    </div>
+                  </div>
+                )
+              })}
+              {reservas.filter(r => quadrasFiltradas.some(q => q.id === r.quadraId)).length === 0 && (
+                <div className="p-8 text-center text-slate-500 font-medium">Nenhuma reserva encontrada na semana.</div>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block print:block space-y-12">
               {quadrasPorModalidade.filter(([mod]) => mod.toLowerCase() !== 'futebol').map(([modalidade, quadrasModalidade]) => (
-                <div key={modalidade} className="break-inside-avoid">
-                  <h2 className="text-lg font-black text-slate-800 mb-3 px-1 uppercase tracking-widest border-b-2 border-slate-300 pb-2">
-                    {modalidade}
-                  </h2>
-                  <table className="w-full min-w-max border-collapse text-xs">
+                <div key={modalidade} className="break-inside-avoid bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:border-none print:shadow-none print:rounded-none">
+                  <div className="bg-[#004B87] border-b-[3px] border-[#FFD100] px-4 py-3 print:bg-transparent print:border-b-2 print:border-slate-800 print:text-black">
+                    <h2 className="text-lg font-black text-white uppercase tracking-widest print:text-slate-800">
+                      {modalidade}
+                    </h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-max border-collapse text-xs">
                   <thead>
                     {/* Dias da Semana (Primeira Linha) */}
                     <tr>
-                      <th className="border border-slate-300 bg-slate-100 p-2 text-center font-bold text-slate-800 uppercase w-20">
+                      <th className="border border-slate-200 bg-slate-50 p-3 text-center font-bold text-slate-500 uppercase w-20">
                         Horário
                       </th>
                       {weekDays.map(day => (
                         <th 
                           key={formatarDataLocal(day)} 
                           colSpan={quadrasModalidade.length} 
-                          className="border border-slate-300 bg-slate-200 p-2 text-center font-bold text-slate-800 uppercase"
+                          className="border border-slate-200 bg-slate-100 p-3 text-center font-bold text-slate-700 uppercase"
                         >
                           {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}. {day.getDate()}/{day.getMonth() + 1}
                         </th>
@@ -362,12 +428,12 @@ export default function AgendaSemanalPage() {
                     {/* Nomes das Quadras (Segunda Linha) */}
                     {weekDays.length > 0 && (
                       <tr>
-                        <th className="border border-slate-300 bg-white p-1"></th>
+                        <th className="border border-slate-200 bg-white p-1"></th>
                         {weekDays.map(day => (
                           quadrasModalidade.map(q => (
                             <th 
                               key={`${formatarDataLocal(day)}-${q.id}-header`} 
-                              className="border border-slate-300 bg-white p-2 text-center font-bold text-slate-700 uppercase"
+                              className="border border-slate-200 bg-white p-2.5 text-center font-bold text-slate-600 uppercase text-[11px]"
                             >
                               {q.nome}
                             </th>
@@ -391,7 +457,7 @@ export default function AgendaSemanalPage() {
 
                       return (
                       <tr key={slot}>
-                        <td className="border border-slate-300 bg-slate-50 font-bold p-2 text-center whitespace-nowrap text-slate-800">
+                        <td className="border border-slate-200 bg-slate-50 font-bold p-3 text-center whitespace-nowrap text-slate-700">
                           {slot.split(' - ')[0] || slot}
                         </td>
                         {weekDays.map(day => {
@@ -446,41 +512,44 @@ export default function AgendaSemanalPage() {
                     })}
                     {allSlots.length === 0 && (
                       <tr>
-                        <td colSpan={(weekDays.length * quadrasModalidade.length) + 1} className="p-8 text-center text-slate-500 border border-slate-300 font-medium">
+                        <td colSpan={(weekDays.length * quadrasModalidade.length) + 1} className="p-8 text-center text-slate-500 border border-slate-200 font-medium">
                           Nenhuma agenda disponível para a semana base selecionada.
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
-              </div>
+                  </div>
+                </div>
             ))}
-            </div>
             
             {/* Renderizar FUTEBOL separadamente com grande margem */}
             {quadrasPorModalidade.filter(([mod]) => mod.toLowerCase() === 'futebol').map(([modalidade, quadrasModalidade]) => (
-              <div key={modalidade} className="mt-32 pt-16 border-t-[16px] border-slate-200 break-inside-avoid print:break-before-page print:mt-0 print:pt-0 print:border-none">
-                <h2 className="text-xl font-black text-slate-800 mb-3 px-1 uppercase tracking-widest border-b-2 border-slate-300 pb-2">
-                  {modalidade}
-                </h2>
-                <table className="w-full min-w-max border-collapse text-xs">
+              <div key={modalidade} className="mt-12 break-inside-avoid bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:break-before-page print:mt-0 print:border-none print:shadow-none print:rounded-none">
+                  <div className="bg-[#009A44] border-b-[3px] border-[#FFD100] px-4 py-3 print:bg-transparent print:border-b-2 print:border-slate-800 print:text-black">
+                    <h2 className="text-lg font-black text-white uppercase tracking-widest print:text-slate-800">
+                      {modalidade}
+                    </h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-max border-collapse text-xs">
                   <thead>
                     <tr>
-                      <th className="border border-slate-300 bg-slate-100 p-2 text-center font-bold text-slate-800 uppercase w-20">
+                      <th className="border border-slate-200 bg-slate-50 p-3 text-center font-bold text-slate-500 uppercase w-20">
                         Horário
                       </th>
                       {weekDays.map(day => (
-                        <th key={formatarDataLocal(day)} colSpan={quadrasModalidade.length} className="border border-slate-300 bg-slate-200 p-2 text-center font-bold text-slate-800 uppercase">
+                        <th key={formatarDataLocal(day)} colSpan={quadrasModalidade.length} className="border border-slate-200 bg-slate-100 p-3 text-center font-bold text-slate-700 uppercase">
                           {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}. {day.getDate()}/{day.getMonth() + 1}
                         </th>
                       ))}
                     </tr>
                     {weekDays.length > 0 && (
                       <tr>
-                        <th className="border border-slate-300 bg-white p-1"></th>
+                        <th className="border border-slate-200 bg-white p-1"></th>
                         {weekDays.map(day => (
                           quadrasModalidade.map(q => (
-                            <th key={`${formatarDataLocal(day)}-${q.id}-header`} className="border border-slate-300 bg-white p-2 text-center font-bold text-slate-700 uppercase">
+                            <th key={`${formatarDataLocal(day)}-${q.id}-header`} className="border border-slate-200 bg-white p-2.5 text-center font-bold text-slate-600 uppercase text-[11px]">
                               {q.nome}
                             </th>
                           ))
@@ -498,7 +567,7 @@ export default function AgendaSemanalPage() {
 
                       return (
                       <tr key={slot}>
-                        <td className="border border-slate-300 bg-slate-50 font-bold p-2 text-center whitespace-nowrap text-slate-800">{slot.split(' - ')[0] || slot}</td>
+                        <td className="border border-slate-200 bg-slate-50 font-bold p-3 text-center whitespace-nowrap text-slate-700">{slot.split(' - ')[0] || slot}</td>
                         {weekDays.map(day => {
                           const dataStr = formatarDataLocal(day)
                           return quadrasModalidade.map(quadra => {
@@ -527,13 +596,15 @@ export default function AgendaSemanalPage() {
                     })}
                     {allSlots.length === 0 && (
                       <tr>
-                        <td colSpan={(weekDays.length * quadrasModalidade.length) + 1} className="p-8 text-center text-slate-500 border border-slate-300 font-medium">Nenhuma agenda disponível para a semana base selecionada.</td>
+                        <td colSpan={(weekDays.length * quadrasModalidade.length) + 1} className="p-8 text-center text-slate-500 border border-slate-200 font-medium">Nenhuma agenda disponível para a semana base selecionada.</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
-              </div>
+                  </div>
+                </div>
             ))}
+            </div>
           </div>
         )}
       </div>

@@ -351,9 +351,9 @@ export default function AdminTimesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Times de Futebol</h1>
+          <h1 className="hidden md:block text-3xl font-bold text-slate-800">Times de Futebol</h1>
           <p className="text-slate-500 mt-1">{times.length} time(s) cadastrado(s)</p>
         </div>
         <button
@@ -364,7 +364,7 @@ export default function AdminTimesPage() {
             setResp2(initialResp)
             setShowForm(!showForm)
           }}
-          className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95"
+          className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap self-start md:self-auto"
         >
           <Plus className="w-5 h-5" /> Cadastrar Time
         </button>
@@ -428,7 +428,105 @@ export default function AdminTimesPage() {
             Nenhum time cadastrado. Clique em &quot;Cadastrar Time&quot; para começar.
           </div>
         ) : (
-          <table className="w-full text-left border-collapse">
+          <>
+            {/* Mobile Cards View */}
+            <div className="md:hidden flex flex-col divide-y divide-slate-100">
+              {times.map((time) => (
+                <div key={time.id} className="p-4 flex flex-col gap-4 hover:bg-slate-50/50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-slate-800 text-base">{time.nome}</span>
+                    <div className="shrink-0">
+                      {time.status === 'APTO' && (
+                        <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                          <CheckCircle className="w-3 h-3" /> Apto
+                        </span>
+                      )}
+                      {time.status === 'PENDENTE' && (
+                        <span className="inline-flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Pendente
+                        </span>
+                      )}
+                      {time.status === 'SUSPENSO' && (
+                        <span className="inline-flex items-center gap-1 text-red-500 bg-red-500/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                          <XCircle className="w-3 h-3" /> Suspenso
+                        </span>
+                      )}
+                      {time.status === 'INATIVO' && (
+                        <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-500/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                          Inativo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col gap-3">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Responsáveis</span>
+                    <div className="flex flex-col gap-3">
+                      {time.responsaveis?.map((r, index) => (
+                        <div key={r.id || index} className="flex flex-col gap-1 border-b border-slate-200 last:border-0 pb-2 last:pb-0">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold text-slate-700">{r.pessoa?.nome}</span>
+                            <span className="text-slate-400 font-mono text-xs">({formatarCPF(r.pessoa?.cpf || '')})</span>
+                          </div>
+                          
+                          {(r.pessoa?.urlComprovante || r.pessoa?.urlAntecedentes) && (
+                            <div className="flex items-center gap-3 text-xs mt-0.5">
+                              {r.pessoa?.urlComprovante && (
+                                <a href={r.pessoa.urlComprovante} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#004B87] hover:underline font-semibold">
+                                  <FileText className="w-3 h-3" /> Comprovante
+                                </a>
+                              )}
+                              {r.pessoa?.urlAntecedentes && (
+                                <a href={r.pessoa.urlAntecedentes} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#004B87] hover:underline font-semibold">
+                                  <FileText className="w-3 h-3" /> Antecedentes
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-xs text-slate-400 font-medium">
+                      Cadastrado em {new Date(time.createdAt).toLocaleDateString('pt-BR')}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {time.status === 'PENDENTE' && (
+                        <button
+                          onClick={() => {
+                            setTimeParaConferir(time.id)
+                            setModalConferenciaAberto(true)
+                          }}
+                          className="text-xs bg-[#004B87] hover:bg-[#003865] text-white px-3 py-1.5 rounded-lg transition-colors font-semibold"
+                        >
+                          Conferir
+                        </button>
+                      )}
+                      <button
+                        onClick={() => abrirEdicao(time)}
+                        className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg transition-colors"
+                        title="Editar time"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => excluirTime(time.id, time.nome)}
+                        className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition-colors"
+                        title="Excluir time"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-max text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <th className="p-4">Nome do Time</th>
@@ -528,7 +626,9 @@ export default function AdminTimesPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

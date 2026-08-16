@@ -354,7 +354,7 @@ export default function AdminCalendarioPage() {
   return (
     <div className="p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-800">Liberação de horários</h1>
+        <h1 className="hidden md:block text-3xl font-bold text-slate-800">Liberação de horários</h1>
         <p className="text-slate-500 mt-1">Módulo oficial para administração da grade de horários e liberação de quadras públicas.</p>
       </div>
 

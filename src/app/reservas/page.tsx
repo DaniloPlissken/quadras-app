@@ -43,7 +43,7 @@ const modalidades = [
   },
   {
     nome: 'Futebol',
-    descricao: 'Exige cadastro prévio do time.',
+    descricao: 'O cadastro de times, aprovação e agendamentos são realizados exclusivamente pela equipe da FUTEL.',
     href: '/reservas/futebol',
     icone: MdSportsSoccer,
     ativo: false,

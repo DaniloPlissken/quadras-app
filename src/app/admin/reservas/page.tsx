@@ -264,7 +264,7 @@ export default function AdminReservasPage() {
 
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 no-print">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Gestão de Reservas</h1>
+          <h1 className="hidden md:block text-3xl font-bold text-slate-800">Gestão de Reservas</h1>
           <p className="text-slate-500 mt-1 flex items-center gap-2">
             {reservas.length} reserva(s) encontrada(s)
             {(!filtroDataInicio && !filtroDataFim && reservas.length === 1000) && (
@@ -402,57 +402,30 @@ export default function AdminReservasPage() {
             Nenhuma reserva encontrada para os filtros selecionados.
           </div>
         ) : (
-          <div className={`overflow-x-auto transition-opacity duration-300 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
-            <table className="w-full text-left border-collapse min-w-[900px]">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="p-4">Data</th>
-                  <th className="p-4">Horário</th>
-                  <th className="p-4">Quadra/Modalidade</th>
-                  <th className="p-4">Tipo</th>
-                  <th className="p-4">Responsável</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right no-print">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
-                {reservas.map((r) => {
-                  const isTime = !!r.time
-                  const tipoTexto = isTime ? 'Time' : 'Cidadão'
-                  
-                  let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
-                  let responsavelSub = r.user?.email || 'Sem e-mail'
+          <div className={`transition-opacity duration-300 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+            
+            {/* Mobile Cards View */}
+            <div className="md:hidden flex flex-col divide-y divide-slate-100">
+              {reservas.map((r) => {
+                const isTime = !!r.time
+                const tipoTexto = isTime ? 'Time' : 'Cidadão'
+                
+                let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
+                let responsavelSub = r.user?.email || 'Sem e-mail'
 
-                  if (r.time && r.time.responsaveis.length > 0) {
-                    responsavelNome = r.time.nome
-                    responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
-                  }
+                if (r.time && r.time.responsaveis.length > 0) {
+                  responsavelNome = r.time.nome
+                  responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
+                }
 
-                  return (
-                  <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 font-semibold whitespace-nowrap text-slate-800">
-                      {formatDataCivilBR(r.data)}
-                    </td>
-                    <td className="p-4">
-                      <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-lg text-xs font-bold">
-                        {r.slot}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-bold text-slate-800">{r.quadra.nome}</div>
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">{r.quadra.modalidade.nome}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-md text-xs font-semibold ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {tipoTexto}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-bold text-slate-800">{responsavelNome}</div>
-                      <div className="text-xs text-slate-500 truncate max-w-[200px]" title={responsavelSub}>{responsavelSub}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                return (
+                  <div key={r.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-slate-800 text-base">{r.quadra.nome}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wide">{r.quadra.modalidade.nome}</div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                         r.status === 'CONFIRMADA'
                           ? 'bg-emerald-100 text-emerald-800'
                           : r.status === 'CONCLUIDA'
@@ -461,8 +434,27 @@ export default function AdminReservasPage() {
                       }`}>
                         {r.status === 'CONFIRMADA' ? 'Confirmada' : r.status === 'CONCLUIDA' ? 'Concluída' : 'Cancelada'}
                       </span>
-                    </td>
-                    <td className="p-4 text-right no-print flex justify-end gap-2">
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-slate-800">{formatDataCivilBR(r.data)}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap inline-block">
+                        {r.slot}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col gap-1 mt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-sm truncate pr-2">{responsavelNome}</span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'}`}>
+                          {tipoTexto}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500 truncate" title={responsavelSub}>{responsavelSub}</span>
+                    </div>
+                    
+                    <div className="flex gap-2 justify-end mt-2">
                       {r.user?.email && (
                         <button
                           onClick={() => {
@@ -470,8 +462,7 @@ export default function AdminReservasPage() {
                             setMensagemTexto('')
                             setMensagemModalOpen(true)
                           }}
-                          className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-transparent hover:border-blue-200"
-                          title="Enviar E-mail"
+                          className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-slate-200 hover:border-blue-200"
                         >
                           <Mail className="w-3.5 h-3.5" />
                           Mensagem
@@ -487,21 +478,120 @@ export default function AdminReservasPage() {
                             setCancelModalOpen(true)
                           }}
                           disabled={cancelando === r.id}
-                          className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors disabled:opacity-50 border border-transparent hover:border-red-200"
+                          className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-slate-200 hover:border-red-200"
                         >
-                          {cancelando === r.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <XCircle className="w-3.5 h-3.5" />
-                          )}
+                          {cancelando === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                           Cancelar
                         </button>
                       )}
-                    </td>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="p-4">Data</th>
+                    <th className="p-4">Horário</th>
+                    <th className="p-4">Quadra/Modalidade</th>
+                    <th className="p-4">Tipo</th>
+                    <th className="p-4">Responsável</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right no-print">Ações</th>
                   </tr>
-                )})}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
+                  {reservas.map((r) => {
+                    const isTime = !!r.time
+                    const tipoTexto = isTime ? 'Time' : 'Cidadão'
+                    
+                    let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
+                    let responsavelSub = r.user?.email || 'Sem e-mail'
+
+                    if (r.time && r.time.responsaveis.length > 0) {
+                      responsavelNome = r.time.nome
+                      responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
+                    }
+
+                    return (
+                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4 font-semibold whitespace-nowrap text-slate-800">
+                        {formatDataCivilBR(r.data)}
+                      </td>
+                      <td className="p-4">
+                        <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap inline-block">
+                          {r.slot}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-bold text-slate-800">{r.quadra.nome}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wide">{r.quadra.modalidade.nome}</div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {tipoTexto}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-bold text-slate-800">{responsavelNome}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[200px]" title={responsavelSub}>{responsavelSub}</div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                          r.status === 'CONFIRMADA'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : r.status === 'CONCLUIDA'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {r.status === 'CONFIRMADA' ? 'Confirmada' : r.status === 'CONCLUIDA' ? 'Concluída' : 'Cancelada'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right no-print flex justify-end gap-2">
+                        {r.user?.email && (
+                          <button
+                            onClick={() => {
+                              setReservaSelecionada(r)
+                              setMensagemTexto('')
+                              setMensagemModalOpen(true)
+                            }}
+                            className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-transparent hover:border-blue-200"
+                            title="Enviar E-mail"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Mensagem
+                          </button>
+                        )}
+
+                        {r.status === 'CONFIRMADA' && (
+                          <button
+                            onClick={() => {
+                              setReservaParaCancelar(r)
+                              setMotivoCancelamento('Condições climáticas (chuva, etc.)')
+                              setMotivoOutro('')
+                              setCancelModalOpen(true)
+                            }}
+                            disabled={cancelando === r.id}
+                            className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors disabled:opacity-50 border border-transparent hover:border-red-200"
+                          >
+                            {cancelando === r.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <XCircle className="w-3.5 h-3.5" />
+                            )}
+                            Cancelar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )})}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

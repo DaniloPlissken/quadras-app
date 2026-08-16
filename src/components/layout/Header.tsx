@@ -4,10 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Menu, X, LogOut, User, ChevronDown } from 'lucide-react';
 
 export function Header() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -26,6 +28,10 @@ export function Header() {
   const userName = session?.user?.name || '';
   const userInitial = userName.charAt(0).toUpperCase();
   const isAdmin = session?.user?.role === 'ADMIN';
+
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <header className="w-full font-sans sticky top-0 z-50 bg-white">
