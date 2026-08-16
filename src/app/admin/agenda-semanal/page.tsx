@@ -408,7 +408,7 @@ export default function AgendaSemanalPage() {
                             // Célula com Reserva
                             const telClean = reserva.time ? (reserva.time.responsaveis[0]?.telefone || '') : (reserva.user.telefone || '')
                             const telDisplay = telClean ? (
-                              <a href={`tel:${telClean}`} className="hover:underline text-blue-600 ml-1">{telClean}</a>
+                              <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a>
                             ) : (
                               <span className="text-slate-400 ml-1">[Sem Telefone]</span>
                             )
@@ -418,7 +418,7 @@ export default function AgendaSemanalPage() {
                             
                             if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
                               const resp = reserva.time.responsaveis[0]
-                              infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-[#004B87] text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
+                              infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
                               subInfo = (
                                 <div className="flex flex-col gap-0.5">
                                   <span>Resp: {resp.nome.toUpperCase()}</span>
@@ -504,13 +504,13 @@ export default function AgendaSemanalPage() {
                             if (!reserva) return <td key={`${dataStr}-${quadra.id}`} className="bg-white border border-slate-200"></td>
                             
                             const telClean = reserva.time ? (reserva.time.responsaveis[0]?.telefone || '') : (reserva.user.telefone || '')
-                            const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-blue-600 ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
+                            const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
                             
                             let infoTexto: React.ReactNode = ''
                             let subInfo: React.ReactNode = ''
                             
                             if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
-                              infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-[#004B87] text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
+                              infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
                               subInfo = <div className="flex flex-col gap-0.5"><span>Resp: {reserva.time.responsaveis[0].nome.toUpperCase()}</span><span>Tel: {telDisplay}</span></div>
                             } else {
                               infoTexto = reserva.user.name.toUpperCase()

@@ -30,7 +30,7 @@ export function Header() {
   return (
     <header className="w-full font-sans sticky top-0 z-50">
       {/* Thin accent stripe */}
-      <div className="h-1 bg-gradient-to-r from-[#004B87] via-[#009A44] to-[#FFCD00]" />
+      <div className="h-1 bg-gradient-to-r from-primary via-secondary to-accent" />
 
       {/* Main bar */}
       <div className="bg-white border-b border-slate-200/80 shadow-sm">
@@ -46,7 +46,7 @@ export function Header() {
               priority
             />
             <div className="hidden sm:flex flex-col leading-tight">
-              <span className="text-[11px] font-bold tracking-wider text-[#004B87] uppercase">
+              <span className="text-[11px] font-bold tracking-wider text-primary uppercase">
                 FUTEL
               </span>
               <span className="text-[10px] text-slate-500 font-medium">
@@ -64,7 +64,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-[#004B87] hover:bg-blue-50/60 transition-all duration-200"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-blue-50/60 transition-all duration-200"
               >
                 {item.label}
               </Link>
@@ -72,7 +72,7 @@ export function Header() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-[#004B87] hover:bg-blue-50/60 transition-all duration-200"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-blue-50/60 transition-all duration-200"
               >
                 Painel Admin
               </Link>
@@ -88,7 +88,7 @@ export function Header() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors duration-200"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#004B87] flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shadow-sm">
                     {userInitial}
                   </div>
                   <div className="hidden md:flex flex-col items-start leading-tight">
@@ -114,7 +114,7 @@ export function Header() {
                       <Link
                         href="/admin"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-[#004B87] transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors"
                       >
                         <User className="w-4 h-4" />
                         Painel Admin
@@ -135,7 +135,7 @@ export function Header() {
               /* Not logged in */
               <Link
                 href="/login"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[#004B87] border border-[#004B87]/20 hover:bg-[#004B87] hover:text-white transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all duration-200"
               >
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Entrar</span>
@@ -164,7 +164,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-[#004B87] transition-colors"
+                  className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-primary transition-colors"
                 >
                   {item.label}
                 </Link>
@@ -173,7 +173,7 @@ export function Header() {
                 <Link
                   href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-[#004B87] hover:bg-blue-50 transition-colors"
+                  className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-primary hover:bg-blue-50 transition-colors"
                 >
                   Painel Admin
                 </Link>

@@ -299,7 +299,7 @@ if (!session) {
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-            Reserva - <span className="text-[#004B87]">{nomeModalidade(modalidade)}</span>
+            Reserva - <span className="text-primary">{nomeModalidade(modalidade)}</span>
           </h1>
           <Link
             href="/reservas"
@@ -338,7 +338,7 @@ if (!session) {
                   }}
                   className="rounded-xl border border-slate-100 shadow-sm p-4 bg-white"
                   classNames={{
-                    day_selected: "bg-[#004B87] text-white hover:bg-[#004B87] hover:text-white focus:bg-[#004B87] focus:text-white",
+                    day_selected: "bg-primary text-white hover:bg-primary/90 hover:text-white focus:bg-primary focus:text-white",
                     day_today: "bg-slate-100 text-slate-900",
                   }}
                 />
@@ -363,7 +363,7 @@ if (!session) {
                     key={quadra.id}
                     variant={quadraId === quadra.id ? 'default' : 'outline'}
                     onClick={() => setQuadraId(quadra.id)}
-                    className={`rounded-full px-6 transition-all ${quadraId === quadra.id ? 'bg-[#004B87] hover:bg-[#003865] text-white shadow-md' : 'hover:border-[#004B87] hover:text-[#004B87]'}`}
+                    className={`rounded-full px-6 transition-all ${quadraId === quadra.id ? 'bg-primary hover:bg-primary/90 text-white shadow-md' : 'hover:border-primary hover:text-primary'}`}
                   >
                     {quadra.nome}
                   </Button>
@@ -405,12 +405,12 @@ if (!session) {
                             ? 'bg-slate-100 cursor-not-allowed opacity-70' 
                             : bloqueado
                               ? 'bg-slate-50 border border-slate-200 cursor-not-allowed'
-                              : 'bg-white border-2 border-slate-200 hover:border-[#004B87] hover:shadow-lg cursor-pointer active:scale-95'
+                              : 'bg-white border-2 border-slate-200 hover:border-secondary hover:shadow-lg cursor-pointer active:scale-95'
                           }
                         `}
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-lg font-bold ${ocupado ? 'text-slate-500' : 'text-slate-800 group-hover:text-[#004B87]'}`}>
+                          <span className={`text-lg font-bold ${ocupado ? 'text-slate-500' : 'text-slate-800 group-hover:text-secondary'}`}>
                             {slot}
                           </span>
                           <span className={`text-xs font-semibold px-2 py-1 rounded-full uppercase tracking-wider
@@ -418,14 +418,14 @@ if (!session) {
                               ? 'bg-slate-200 text-slate-600' 
                               : bloqueado 
                                 ? 'bg-slate-200 text-slate-500'
-                                : 'bg-[#004B87]/10 text-[#004B87]'
+                                : 'bg-secondary/10 text-secondary'
                             }
                           `}>
                             {ocupado ? 'Ocupado' : bloqueado ? 'Bloqueado' : 'Livre'}
                           </span>
                         </div>
                         {(!ocupado && !bloqueado) && (
-                          <div className="absolute inset-0 bg-[#004B87]/5 translate-y-full transition-transform group-hover:translate-y-0" />
+                          <div className="absolute inset-0 bg-secondary/5 translate-y-full transition-transform group-hover:translate-y-0" />
                         )}
                       </button>
                     )

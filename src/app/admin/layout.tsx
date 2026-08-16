@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, CalendarClock, Users, Map, Settings } from "lucide-react";
+import { LayoutDashboard, CalendarClock, Users, Map, Settings, ClipboardList } from "lucide-react";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 
 export default async function AdminLayout({
@@ -45,7 +45,7 @@ export default async function AdminLayout({
             </li>
             <li>
               <Link href="/admin/reservas" className="flex items-center gap-3 px-6 py-3 hover:bg-white/10 transition-colors">
-                <CalendarClock className="w-5 h-5" />
+                <ClipboardList className="w-5 h-5" />
                 <span>Gestão de Reservas</span>
               </Link>
             </li>
