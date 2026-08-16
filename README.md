@@ -1,101 +1,97 @@
-# Quadras App - Sistema de Gestão e Reserva de Quadras (FUTEL)
+# Quadras App - Portal FUTEL
+**Repositório Privado - Eduardo e Danilo**
 
-Sistema completo para agendamento, gestão de quadras poliesportivas, cadastro e aprovação de times e emissão de agenda semanal para administração pública / complexos esportivos.
+Sistema interno desenvolvido para agendamento, gestão de quadras poliesportivas, cadastro de times e emissão de agenda semanal para a FUTEL.
 
 ---
 
-## Tecnologias
+## 🛠 Tecnologias
 
 - **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) + React 19 + TypeScript
-- **Banco de Dados & ORM**: PostgreSQL via [Supabase](https://supabase.com/) + [Prisma ORM](https://www.prisma.io/)
-- **Estilização**: Tailwind CSS v4 + Radix UI + Lucide Icons + Sonner (Toasts)
+- **Banco de Dados**: PostgreSQL via [Supabase](https://supabase.com/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **UI & Estilos**: Tailwind CSS v4 + Radix UI + Lucide Icons + Sonner
 - **Autenticação**: NextAuth.js com Credentials Provider & Hash bcryptjs
 
 ---
 
-## Estrutura do Projeto
+## 📂 Estrutura do Projeto
+
+Abaixo as pastas principais do projeto para facilitar a manutenção:
 
 ```
 ├── prisma/
-│   └── schema.prisma         # Modelagem do banco (User, Reserva, Quadra, Modalidade, Time, Agenda)
+│   ├── schema.prisma         # Modelagem do banco (User, Reserva, Quadra, Modalidade, Time, Agenda)
+│   └── seed.js               # Script central de carga de dados (Cria as modalidades e quadras)
 ├── src/
 │   ├── app/
-│   │   ├── (public)/         # Páginas públicas (Home, Login, Cadastro, Reservas por Modalidade)
-│   │   ├── admin/            # Painel Administrativo (Dashboard, Quadras, Calendário, Agenda Semanal, Times)
-│   │   └── api/              # Rotas de API (NextAuth, Reservas, Quadras, Agenda, Admin)
-│   ├── components/           # Componentes reutilizáveis de UI e layout
-│   └── lib/                  # Configurações de Prisma e NextAuth
-├── seed-modalidades.js       # Seed inicial de modalidades
-├── seed-quadras.js           # Seed completo com quadras, agendas, times e usuário teste
-└── create-admin.js           # Criação do usuário administrador
+│   │   ├── (public)/         # Rotas públicas do cidadão (Home, Login, Cadastro, Reservas)
+│   │   ├── admin/            # Rotas do Painel Administrativo
+│   │   ├── admin-login/      # Login exclusivo para nós/servidores
+│   │   └── api/              # Rotas de Backend
+│   ├── components/           # Componentes UI reutilizáveis (shadcn, forms, etc)
+│   └── lib/                  # Utilitários globais (Prisma client, configs NextAuth, exports)
+└── TODO.md                   # Backlog e pendências internas do projeto
 ```
 
 ---
 
-## Como Rodar Localmente
+## ⚙️ Como Rodar o Projeto
 
-### 1. Clonar o repositório e instalar dependências:
-```bash
-git clone <url-do-repositorio>
-cd quadras-app
-npm install
-```
-
-### 2. Configurar Variáveis de Ambiente:
-Crie um arquivo `.env` na raiz baseado no `.env.example`:
+### 1. Variáveis de Ambiente
+Crie ou verifique o seu arquivo `.env` na raiz do projeto (nunca suba as credenciais reais pro git):
 ```env
 DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[SENHA]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
 DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[SENHA]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
+
+# NextAuth
 NEXTAUTH_SECRET="minha-chave-secreta-segura-123"
 NEXTAUTH_URL="http://localhost:3000"
+
+# Servidor de E-mail (SMTP para disparo de confirmações)
+SMTP_HOST="smtp.seuprovedor.com"
+SMTP_PORT="465"
+SMTP_USER="nao-responda@futel.mg.gov.br"
+SMTP_PASS="senha-do-email"
+SMTP_FROM="nao-responda@futel.mg.gov.br"
 ```
 
-### 3. Sincronizar o Banco de Dados e Rodar Seeds:
+### 2. Sincronização do Banco e Seed
+Se houver alguma mudança no `schema.prisma` ou se a base estiver zerada:
 ```bash
-# Criação das tabelas no banco
+# Aplica o schema no Supabase
 npx prisma db push
 
-# Criar admin padrão e dados de teste
-node create-admin.js
-node seed-quadras.js
+# Popula as modalidades e quadras essenciais
+node prisma/seed.js
 ```
 
-### 4. Executar em Desenvolvimento:
+### 3. Rodar o Ambiente Local
 ```bash
+# Executa o servidor de dev (Turbopack)
 npm run dev
 ```
-Acesse: [http://localhost:3000](http://localhost:3000)
 
-### 5. Verificação de Qualidade e Build:
+---
+
+## 🔒 Acesso e Credenciais de Teste
+
+Para agilizar os testes no painel administrativo ou fluxos públicos:
+
+| Perfil | Identificador (Login) | Senha | Acesso |
+| :--- | :--- | :--- | :--- |
+| **Administrador** | `admin@futel.mg.gov.br` (Email) | `123456` | Rota: `/admin-login` |
+| **Cidadão / Usuário Teste** | `12345678900` (CPF) | `123456` | Rota: `/login` |
+
+---
+
+## 📋 Qualidade e Build
+
+Antes de realizar os deploys, sempre rode:
 ```bash
-# Análise de lint e tipagem
+# Verifica sintaxe e erros do TypeScript/React
 npm run lint
 
-# Build de produção
+# Simula o build da Vercel (identifica rotas quebradas)
 npm run build
 ```
-
----
-
-## Credenciais Padrão para Testes
-
-| Perfil | E-mail / Identificador | CPF | Senha |
-| :--- | :--- | :--- | :--- |
-| **Administrador** | `admin@futel.mg.gov.br` | `admin` | `123456` |
-| **Cidadão / Usuário Teste** | `cidadao@teste.com` | `12345678900` | `123456` |
-
----
-
-## Funcionalidades Principais
-
-- **Portal do Cidadão**:
-  - Cadastro obrigatório com validação de CPF como identificador único.
-  - Agendamento de horários por modalidade esportiva (Futebol, Vôlei, Beach Tênis, Tênis).
-  - Trava de reservas com base em regras de documentação e time ativo.
-
-- **Painel Administrativo (`/admin`)**:
-  - **Dashboard**: Métricas em tempo real (reservas de hoje, cancelamentos, total de times e quadras).
-  - **Gestão de Quadras**: Ativação, desativação e criação de quadras por modalidade.
-  - **Calendário & Liberação de Horários**: Liberação de dias abertos e grades personalizadas.
-  - **Agenda Semanal (Grid Time-Sheet)**: Visualização consolidada por modalidade com suporte nativo a impressão/relatório.
-  - **Gestão de Times**: Análise de documentos (comprovante de residência e antecedentes criminais) e aprovação de aptidão para reserva.
