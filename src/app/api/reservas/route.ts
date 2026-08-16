@@ -199,21 +199,12 @@ export async function POST(req: Request) {
       )
     }
 
-    // Se a modalidade for Futebol, o usuário (CPF) precisa ser um responsável apto
+    // Se a modalidade for Futebol, bloqueia o agendamento pelo cidadão
     if (quadra.modalidade.nome.toLowerCase() === 'futebol') {
-      const responsavelApto = await prisma.responsavelTime.findFirst({
-        where: {
-          cpf: userId,
-          apto: true
-        }
-      })
-
-      if (!responsavelApto) {
-        return NextResponse.json(
-          { error: 'Apenas responsáveis aptos de times validados podem reservar campos de futebol.' },
-          { status: 403 }
-        )
-      }
+      return NextResponse.json(
+        { error: 'Reservas de futebol são realizadas exclusivamente pela administração da FUTEL.' },
+        { status: 403 }
+      )
     }
 
     const reserva = await prisma.reserva.create({

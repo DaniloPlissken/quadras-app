@@ -266,17 +266,14 @@ if (!session) {
             </CardHeader>
 
             <CardContent className="space-y-4 text-slate-700 p-8">
-              <p className="text-lg font-semibold">
-                O agendamento de campos de futebol exige cadastro prévio do time.
+              <p className="text-lg font-semibold text-center mb-4">
+                Agendamento realizado diretamente pela FUTEL
               </p>
 
-              <p>
-                Para reservar um campo, o responsável deverá estar vinculado a um
-                time cadastrado pela administração.
-              </p>
-
-              <p>
-                Esta funcionalidade será liberada em uma próxima etapa do sistema.
+              <p className="text-center">
+                Para reservar um campo, o responsável deve estar vinculado a um
+                time cadastrado administrativamente com a documentação conferida.
+                Entre em contato com os canais institucionais para realizar seu agendamento.
               </p>
 
               <div className="pt-4">

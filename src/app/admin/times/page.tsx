@@ -13,12 +13,15 @@ type Responsavel = {
   urlComprovante?: string
   antecedentesCriminais: boolean
   urlAntecedentes?: string
-  apto: boolean
 }
 
 type Time = {
   id: string
   nome: string
+  status: 'PENDENTE' | 'APTO' | 'SUSPENSO' | 'INATIVO'
+  metodoConferencia?: string
+  conferidoEm?: string
+  conferidoPorId?: string
   createdAt: string
   responsaveis: Responsavel[]
 }
@@ -41,7 +44,6 @@ export default function AdminTimesPage() {
     urlComprovante: '',
     antecedentesCriminais: false,
     urlAntecedentes: '',
-    apto: false,
     fileComprovante: null,
     fileAntecedentes: null
   }
@@ -255,21 +257,41 @@ export default function AdminTimesPage() {
           />
         </div>
 
-        {/* Status Final */}
-        <div className="pt-2">
-          <label className="flex items-center gap-2 text-sm font-semibold text-[#009A44] cursor-pointer bg-[#009A44]/5 p-3 rounded-lg border border-[#009A44]/20">
-            <input 
-              type="checkbox" 
-              checked={resp.apto}
-              onChange={(e) => setResp({ ...resp, apto: e.target.checked })}
-              className="w-4 h-4 text-[#009A44] rounded border-slate-300 focus:ring-[#009A44]" 
-            />
-            Apto / Liberado para Reservas de Futebol
-          </label>
-        </div>
       </div>
     </div>
   )
+
+  const [modalConferenciaAberto, setModalConferenciaAberto] = useState(false)
+  const [timeParaConferir, setTimeParaConferir] = useState<string | null>(null)
+  const [metodoConf, setMetodoConf] = useState('CONFERENCIA_EXTERNA')
+  const [obsConf, setObsConf] = useState('')
+
+  async function confirmarConferencia(e: React.FormEvent) {
+    e.preventDefault()
+    if (!timeParaConferir) return
+
+    setSalvando(true)
+    const res = await fetch('/api/admin/times/conferencia', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timeId: timeParaConferir,
+        metodoConferencia: metodoConf,
+        observacaoConferencia: obsConf
+      })
+    })
+    setSalvando(false)
+
+    if (res.ok) {
+      toast.success('Time conferido e marcado como APTO com sucesso!')
+      setModalConferenciaAberto(false)
+      setTimeParaConferir(null)
+      carregarTimes()
+    } else {
+      const err = await res.json()
+      toast.error(err.error || 'Erro ao conferir time.')
+    }
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -353,7 +375,33 @@ export default function AdminTimesPage() {
             <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
               {times.map((time) => (
                 <tr key={time.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="p-4 font-medium">{time.nome}</td>
+                  <td className="p-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">{time.nome}</span>
+                      <div>
+                        {time.status === 'APTO' && (
+                          <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-0.5 rounded-full text-xs font-semibold" title="Time Apto">
+                            <CheckCircle className="w-3 h-3" /> Apto
+                          </span>
+                        )}
+                        {time.status === 'PENDENTE' && (
+                          <span className="inline-flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full text-xs font-semibold" title="Aguardando Conferência">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Pendente
+                          </span>
+                        )}
+                        {time.status === 'SUSPENSO' && (
+                          <span className="inline-flex items-center gap-1 text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full text-xs font-semibold">
+                            <XCircle className="w-3 h-3" /> Suspenso
+                          </span>
+                        )}
+                        {time.status === 'INATIVO' && (
+                          <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-500/10 px-2 py-0.5 rounded-full text-xs font-semibold">
+                            Inativo
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
                   <td className="p-4">
                     <div className="flex flex-col gap-3">
                       {time.responsaveis?.map((r, index) => (
@@ -361,15 +409,6 @@ export default function AdminTimesPage() {
                           <div className="flex items-center gap-2 text-xs">
                             <span className="font-semibold text-slate-700">{r.nome}</span>
                             <span className="text-slate-400 font-mono">({formatarCPF(r.cpf)})</span>
-                            {r.apto ? (
-                              <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-0.5 rounded-full" title="Apto">
-                                <CheckCircle className="w-3 h-3" /> Apto
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full" title="Pendente">
-                                <XCircle className="w-3 h-3" /> Pendente
-                              </span>
-                            )}
                           </div>
                           
                           {/* Links de Documentos */}
@@ -394,7 +433,18 @@ export default function AdminTimesPage() {
                   <td className="p-4 text-slate-500">
                     {new Date(time.createdAt).toLocaleDateString('pt-BR')}
                   </td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-right space-x-2">
+                    {time.status === 'PENDENTE' && (
+                      <button
+                        onClick={() => {
+                          setTimeParaConferir(time.id)
+                          setModalConferenciaAberto(true)
+                        }}
+                        className="text-xs bg-[#004B87] hover:bg-[#003865] text-white px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Conferir Time
+                      </button>
+                    )}
                     <button
                       onClick={() => excluirTime(time.id, time.nome)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
@@ -409,6 +459,55 @@ export default function AdminTimesPage() {
           </table>
         )}
       </div>
+
+      {modalConferenciaAberto && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <form onSubmit={confirmarConferencia} className="bg-white rounded-2xl w-full max-w-md p-6 space-y-6 shadow-xl">
+            <h2 className="text-xl font-bold text-slate-800">Conferência Documental</h2>
+            
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Método de Conferência</label>
+              <select
+                value={metodoConf}
+                onChange={(e) => setMetodoConf(e.target.value)}
+                className="w-full mt-1 border border-slate-300 rounded-lg p-2 text-sm"
+              >
+                <option value="CONFERENCIA_EXTERNA">Foram Conferidos Externamente (Balcão/E-mail)</option>
+                <option value="ANEXOS_SISTEMA">Documentos Anexados no Sistema</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Observação (Opcional)</label>
+              <textarea
+                value={obsConf}
+                onChange={(e) => setObsConf(e.target.value)}
+                rows={3}
+                className="w-full mt-1 border border-slate-300 rounded-lg p-2 text-sm"
+                placeholder="Ex: Documentos entregues fisicamente no dia X."
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setModalConferenciaAberto(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={salvando}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#009A44] hover:bg-[#008A3D] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
+                Tornar Time APTO
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

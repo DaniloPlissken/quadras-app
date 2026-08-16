@@ -19,14 +19,28 @@ enum ReservaStatus {
   CONCLUIDA
 }
 
+enum TimeStatus {
+  PENDENTE
+  APTO
+  SUSPENSO
+  INATIVO
+}
+
+enum MetodoConferencia {
+  ANEXOS_SISTEMA
+  CONFERENCIA_EXTERNA
+}
+
 model User {
-  id       String    @id          // CPF como PK (sem formatação)
-  name     String
-  email    String    @unique
-  password String
-  telefone String?
-  role     Role      @default(USER)
-  reservas Reserva[]
+  id              String    @id          // CPF como PK (sem formatação)
+  name            String
+  email           String    @unique
+  password        String
+  telefone        String?
+  role            Role      @default(USER)
+  reservas        Reserva[] @relation("ReservaUser")
+  reservasCriadas Reserva[] @relation("ReservaOperador")
+  timesConferidos Time[]    @relation("TimeConferidoPor")
 }
 
 model PasswordResetToken {
@@ -57,17 +71,19 @@ model Quadra {
 }
 
 model Reserva {
-  id       String        @id @default(cuid())
-  userId   String
-  quadraId String
-  timeId   String?
-  data     DateTime
+  id          String        @id @default(cuid())
+  userId      String?
+  operadorId  String?
+  quadraId    String
+  timeId      String?
+  data        DateTime
   slot        String
   status      ReservaStatus @default(CONFIRMADA)
   emailStatus String        @default("PENDENTE")
   cancelToken String        @default("")
   quadra      Quadra        @relation(fields: [quadraId], references: [id])
-  user        User          @relation(fields: [userId], references: [id])
+  user        User?         @relation("ReservaUser", fields: [userId], references: [id])
+  operador    User?         @relation("ReservaOperador", fields: [operadorId], references: [id])
   time        Time?         @relation(fields: [timeId], references: [id])
 
   @@unique([data, slot, quadraId, cancelToken])
@@ -75,11 +91,18 @@ model Reserva {
 }
 
 model Time {
-  id           String             @id @default(cuid())
-  nome         String             @unique
-  responsaveis ResponsavelTime[]
-  reservas     Reserva[]
-  createdAt    DateTime           @default(now())
+  id                    String             @id @default(cuid())
+  nome                  String             @unique
+  status                TimeStatus         @default(PENDENTE)
+  conferidoPorId        String?
+  conferidoEm           DateTime?
+  metodoConferencia     MetodoConferencia?
+  observacaoConferencia String?
+
+  conferidoPor          User?              @relation("TimeConferidoPor", fields: [conferidoPorId], references: [id])
+  responsaveis          ResponsavelTime[]
+  reservas              Reserva[]
+  createdAt             DateTime           @default(now())
 }
 
 model ResponsavelTime {
@@ -91,7 +114,6 @@ model ResponsavelTime {
   urlComprovante        String?
   antecedentesCriminais Boolean  @default(false)
   urlAntecedentes       String?
-  apto                  Boolean  @default(false)
   timeId                String
   time                  Time     @relation(fields: [timeId], references: [id], onDelete: Cascade)
 

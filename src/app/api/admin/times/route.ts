@@ -11,7 +11,6 @@ interface ResponsavelInput {
   urlComprovante?: string | null
   antecedentesCriminais?: boolean
   urlAntecedentes?: string | null
-  apto?: boolean
 }
 
 export async function GET() {
@@ -49,15 +48,35 @@ export async function POST(request: Request) {
     }
 
     // Tratar CPF: manter apenas os números e mapear os dados corretamente
-    const responsaveisTratados = (responsaveis as ResponsavelInput[]).map((r: ResponsavelInput) => ({
+    const cpfsTratados = responsaveis.map((r: ResponsavelInput) => r.cpf.replace(/\D/g, ''))
+    
+    // Validar se algum dos CPFs já está em um time APTO, PENDENTE ou SUSPENSO
+    const timesConflitantes = await prisma.time.findFirst({
+      where: {
+        status: { in: ['APTO', 'PENDENTE', 'SUSPENSO'] },
+        responsaveis: {
+          some: {
+            cpf: { in: cpfsTratados }
+          }
+        }
+      }
+    })
+
+    if (timesConflitantes) {
+      return NextResponse.json(
+        { error: 'Um ou mais CPFs informados já estão vinculados a um time ativo.' },
+        { status: 400 }
+      )
+    }
+
+    const responsaveisTratados = responsaveis.map((r: ResponsavelInput) => ({
       cpf: r.cpf.replace(/\D/g, ''),
       nome: r.nome,
       telefone: r.telefone,
       comprovanteResidencia: r.comprovanteResidencia,
       urlComprovante: r.urlComprovante,
       antecedentesCriminais: r.antecedentesCriminais,
-      urlAntecedentes: r.urlAntecedentes,
-      apto: r.apto
+      urlAntecedentes: r.urlAntecedentes
     }))
 
     const time = await prisma.time.create({
