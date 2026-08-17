@@ -219,10 +219,23 @@ export default function AgendaSemanalPage() {
         size: landscape;
         margin: 5mm;
       }
-      table { page-break-inside:auto; width: 100%; }
-      tr    { page-break-inside:avoid; page-break-after:auto }
-      thead { display:table-header-group }
-      tfoot { display:table-footer-group }
+      .overflow-x-auto {
+        overflow: visible !important;
+      }
+      table { 
+        page-break-inside: auto; 
+        width: 100% !important; 
+        min-width: 0 !important;
+        table-layout: fixed;
+      }
+      th, td {
+        padding: 3px !important;
+        font-size: 9px !important;
+        word-wrap: break-word;
+      }
+      tr    { page-break-inside: avoid; page-break-after: auto }
+      thead { display: table-header-group }
+      tfoot { display: table-footer-group }
     }
   `
 

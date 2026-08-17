@@ -42,9 +42,9 @@ export function AdminLayoutShell({
   };
 
   return (
-    <div className="flex h-[100dvh] bg-slate-100 overflow-hidden relative w-full">
+    <div className="flex h-[100dvh] bg-slate-100 overflow-hidden relative w-full print:h-auto print:block print:overflow-visible print:bg-white">
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#004B87] text-white flex items-center justify-between px-4 z-40 shadow-md">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#004B87] text-white flex items-center justify-between px-4 z-40 shadow-md print:hidden">
         <div>
           <h2 className="text-lg font-bold">{getPageTitle()}</h2>
         </div>
@@ -59,14 +59,14 @@ export function AdminLayoutShell({
       {/* Backdrop Overlay */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity"
+          className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity print:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar Drawer */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#004B87] text-white flex flex-col transform transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#004B87] text-white flex flex-col transform transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none print:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -97,7 +97,7 @@ export function AdminLayoutShell({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 md:pt-0 w-full relative">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 md:pt-0 w-full relative print:overflow-visible print:block print:pt-0">
         {children}
       </main>
     </div>
