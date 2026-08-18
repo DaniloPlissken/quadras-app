@@ -1,4 +1,4 @@
-import { prisma, ensureDevEnvironment, gerarCpfValido, getDefaultPasswordHash, SLOTS_GERAL, SLOTS_TENIS, faker } from './utils';
+import { prisma, ensureDevEnvironment, gerarCpfValido, getDefaultPasswordHash, SLOTS_GERAL, SLOTS_TENIS, SLOTS_FUTEBOL_SAB, SLOTS_FUTEBOL_DOM, faker } from './utils';
 import { addDays, startOfDay } from 'date-fns';
 
 async function main() {
@@ -109,10 +109,16 @@ async function main() {
   for (const quadra of quadras) {
     const isTenis = quadra.modalidade.nome.toLowerCase() === 'tênis';
     const isFutebol = quadra.modalidade.nome.toLowerCase() === 'futebol';
-    const slots = isTenis ? SLOTS_TENIS : SLOTS_GERAL;
+    let slotsPadrao = isTenis ? SLOTS_TENIS : SLOTS_GERAL;
 
     for (let d = -DAYS_PAST; d <= DAYS_FUTURE; d++) {
       const data = addDays(hoje, d);
+      let slots = slotsPadrao;
+      
+      if (isFutebol) {
+        if (data.getDay() === 6) slots = SLOTS_FUTEBOL_SAB;
+        else if (data.getDay() === 0) slots = SLOTS_FUTEBOL_DOM;
+      }
       
       if (faker.number.int({ min: 1, max: 10 }) === 1) continue;
 

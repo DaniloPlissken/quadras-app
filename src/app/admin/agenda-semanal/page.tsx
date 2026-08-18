@@ -63,7 +63,15 @@ function gerarSlotsUnicos(reservas: Reserva[]) {
   const slots = new Set<string>()
   reservas.forEach(r => slots.add(r.slot))
   return Array.from(slots).sort()
-  return Array.from(slots).sort()
+}
+
+function formatarCPF(cpf?: string) {
+  if (!cpf) return '';
+  const num = cpf.replace(/\D/g, '');
+  if (num.length === 11) {
+    return num.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+  return cpf;
 }
 
 export default function AgendaSemanalPage() {
@@ -359,11 +367,26 @@ export default function AgendaSemanalPage() {
                 if (!quadra) return null;
                 
                 let responsavelNome = r.user?.name || 'N/A'
-                let responsavelSub = r.user?.email || 'Sem e-mail'
+                let responsavelSub = ''
+                let responsavelTel = r.user?.telefone || ''
+                let responsavelCpf = formatarCPF(r.user?.id)
+                let responsaveisHtml: React.ReactNode = null;
 
                 if (r.time && r.time.responsaveis && r.time.responsaveis.length > 0) {
                   responsavelNome = r.time.nome
-                  responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa?.nome || ''}`
+                  responsaveisHtml = r.time.responsaveis.map((respLink, idx) => {
+                    const p = respLink.pessoa;
+                    if (!p) return null;
+                    const cpf = formatarCPF(p.cpf);
+                    const tel = p.telefone;
+                    return (
+                      <div key={p.id} className="text-xs text-slate-500 mt-2 flex flex-col gap-0.5 border-t border-slate-200/60 pt-2 first:mt-1 first:border-t-0 first:pt-0">
+                        <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome}</span>
+                        {cpf && <span>CPF: {cpf}</span>}
+                        {tel && <span>Tel: {tel}</span>}
+                      </div>
+                    )
+                  })
                 }
 
                 return (
@@ -395,13 +418,24 @@ export default function AgendaSemanalPage() {
                     </div>
 
                     <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col gap-1 mt-1">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-1">
                         <span className="font-bold text-slate-800 text-sm truncate pr-2">{responsavelNome}</span>
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'}`}>
                           {tipoTexto}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500 truncate" title={responsavelSub}>{responsavelSub}</span>
+                      
+                      {responsaveisHtml ? (
+                        <div className="flex flex-col gap-1">
+                          {responsaveisHtml}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-500 flex flex-col gap-0.5">
+                          {responsavelSub && <span className="font-semibold text-slate-700 truncate" title={responsavelSub}>{responsavelSub}</span>}
+                          {responsavelCpf && <span>CPF: {responsavelCpf}</span>}
+                          {responsavelTel && <span>Tel: {responsavelTel}</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
@@ -487,28 +521,46 @@ export default function AgendaSemanalPage() {
                             }
 
                             // Célula com Reserva
-                            const telClean = reserva.time ? (reserva.time.responsaveis[0]?.pessoa?.telefone || '') : (reserva.user?.telefone || '')
-                            const telDisplay = telClean ? (
-                              <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a>
-                            ) : (
-                              <span className="text-slate-400 ml-1">[Sem Telefone]</span>
-                            )
-
                             let infoTexto: React.ReactNode = ''
                             let subInfo: React.ReactNode = ''
                             
                             if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
-                              const resp = reserva.time.responsaveis[0].pessoa
                               infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
                               subInfo = (
-                                <div className="flex flex-col gap-0.5">
-                                  <span>Resp: {resp?.nome?.toUpperCase() || ''}</span>
-                                  <span>Tel: {telDisplay}</span>
+                                <div className="flex flex-col gap-2 mt-1 leading-tight">
+                                  {reserva.time.responsaveis.map((rLink, idx) => {
+                                    const p = rLink.pessoa;
+                                    if (!p) return null;
+                                    const c = formatarCPF(p.cpf);
+                                    const t = p.telefone;
+                                    const telDisp = t ? <a href={`tel:${t}`} className="hover:underline text-primary ml-1">{t}</a> : <span className="text-slate-400 ml-1">[Sem Tel]</span>;
+                                    
+                                    return (
+                                      <div key={p.id} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
+                                        <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome.toUpperCase()}</span>
+                                        <span className="text-[10px]">CPF: {c || 'N/A'}</span>
+                                        <span className="text-[10px]">Tel: {telDisp}</span>
+                                      </div>
+                                    )
+                                  })}
                                 </div>
                               )
                             } else {
+                              const telClean = reserva.user?.telefone || ''
+                              const cpfClean = formatarCPF(reserva.user?.id || '')
+                              const telDisplay = telClean ? (
+                                <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a>
+                              ) : (
+                                <span className="text-slate-400 ml-1">[Sem Telefone]</span>
+                              )
+                              
                               infoTexto = reserva.user?.name?.toUpperCase() || 'ADMIN'
-                              subInfo = <span>Tel: {telDisplay}</span>
+                              subInfo = (
+                                <div className="flex flex-col gap-0.5 mt-1 leading-tight">
+                                  <span>CPF: {cpfClean || 'N/A'}</span>
+                                  <span>Tel: {telDisplay}</span>
+                                </div>
+                              )
                             }
 
                               return (
@@ -587,18 +639,42 @@ export default function AgendaSemanalPage() {
                             const reserva = reservasMap.get(`${dataStr}-${slot}-${quadra.id}`)
                             if (!reserva) return <td key={`${dataStr}-${quadra.id}`} className="bg-white border border-slate-200"></td>
                             
-                            const telClean = reserva.time ? (reserva.time.responsaveis[0]?.pessoa?.telefone || '') : (reserva.user?.telefone || '')
-                            const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
-                            
                             let infoTexto: React.ReactNode = ''
                             let subInfo: React.ReactNode = ''
                             
                             if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
                               infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
-                              subInfo = <div className="flex flex-col gap-0.5"><span>Resp: {reserva.time.responsaveis[0].pessoa?.nome?.toUpperCase() || ''}</span><span>Tel: {telDisplay}</span></div>
+                              subInfo = (
+                                <div className="flex flex-col gap-2 mt-1 leading-tight">
+                                  {reserva.time.responsaveis.map((rLink, idx) => {
+                                    const p = rLink.pessoa;
+                                    if (!p) return null;
+                                    const c = formatarCPF(p.cpf);
+                                    const t = p.telefone;
+                                    const telDisp = t ? <a href={`tel:${t}`} className="hover:underline text-primary ml-1">{t}</a> : <span className="text-slate-400 ml-1">[Sem Tel]</span>;
+                                    
+                                    return (
+                                      <div key={p.id} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
+                                        <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome.toUpperCase()}</span>
+                                        <span className="text-[10px]">CPF: {c || 'N/A'}</span>
+                                        <span className="text-[10px]">Tel: {telDisp}</span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )
                             } else {
+                              const telClean = reserva.user?.telefone || ''
+                              const cpfClean = formatarCPF(reserva.user?.id || '')
+                              const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
+                              
                               infoTexto = reserva.user?.name?.toUpperCase() || 'ADMIN'
-                              subInfo = <span>Tel: {telDisplay}</span>
+                              subInfo = (
+                                <div className="flex flex-col gap-0.5 mt-1 leading-tight">
+                                  <span>CPF: {cpfClean || 'N/A'}</span>
+                                  <span>Tel: {telDisplay}</span>
+                                </div>
+                              )
                             }
 
                             return <CellReserva key={`${dataStr}-${quadra.id}`} infoTexto={infoTexto} subInfo={subInfo} />

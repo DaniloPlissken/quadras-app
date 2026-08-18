@@ -65,6 +65,14 @@ const SLOTS_TENIS = [
   '18:00-19:00', '19:00-20:00', '20:00-21:00', '21:00-21:45',
 ]
 
+const SLOTS_FUTEBOL_SAB = [
+  '09:00-11:00', '14:00-16:00', '16:00-18:00'
+]
+
+const SLOTS_FUTEBOL_DOM = [
+  '08:00-10:00', '10:00-12:00', '15:00-17:00'
+]
+
 export default function AdminCalendarioPage() {
   const [quadras, setQuadras] = useState<Quadra[]>([])
   const [quadraId, setQuadraId] = useState('')
@@ -88,6 +96,7 @@ export default function AdminCalendarioPage() {
 
   const quadraSelecionada = quadras.find(q => q.id === quadraId)
   const ehTenis = quadraSelecionada?.modalidade.nome === 'Tênis'
+  const ehFutebol = quadraSelecionada?.modalidade.nome === 'Futebol'
 
   const agendaDoDia = useMemo(() => {
     if (!dataSelecionada || !quadraId) return null
@@ -255,6 +264,16 @@ export default function AdminCalendarioPage() {
   }
 
   function preencherPadrao() {
+    if (ehFutebol && dataSelecionada) {
+      const day = dataSelecionada.getDay()
+      if (day === 6) {
+        setHorariosEditando([...SLOTS_FUTEBOL_SAB])
+        return
+      } else if (day === 0) {
+        setHorariosEditando([...SLOTS_FUTEBOL_DOM])
+        return
+      }
+    }
     setHorariosEditando(ehTenis ? [...SLOTS_TENIS] : [...SLOTS_PADRAO])
   }
 
@@ -352,20 +371,20 @@ export default function AdminCalendarioPage() {
   const datasComAgenda = agendas.map(a => a.data.split('T')[0])
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-4 md:space-y-8">
       <div>
         <h1 className="hidden md:block text-3xl font-bold text-slate-800">Liberação de horários</h1>
         <p className="text-slate-500 mt-1">Módulo oficial para administração da grade de horários e liberação de quadras públicas.</p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 lg:p-8">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 md:p-6 lg:p-8">
         <h2 className="text-xl font-bold text-slate-800 mb-6">Abertura Padrão (em lotes)</h2>
         <div className="flex flex-col gap-5">
 
-          <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="bg-slate-50 border border-slate-200 p-4 md:p-6 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
               {/* Seleção de Data Base */}
-              <div>
+              <div className="min-w-0 w-full">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Primeiro dia da semana</label>
                 <input
                   type="date"
@@ -373,13 +392,13 @@ export default function AdminCalendarioPage() {
                   onChange={e => setLoteDataBase(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white shadow-sm"
                 />
-                <p className="text-xs text-[#004B87] font-semibold mt-2.5 min-h-[16px]">
+                <p className="text-xs text-[#004B87] font-semibold mt-2.5 min-h-[16px] break-words">
                   {getWeekRangeText(loteDataBase)}
                 </p>
               </div>
 
               {/* Feriado */}
-              <div>
+              <div className="min-w-0 w-full">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Opções Adicionais</label>
 
                 {!loteTemFeriado ? (
@@ -420,28 +439,28 @@ export default function AdminCalendarioPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 mt-2">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mt-2">
             <button
               onClick={liberarEmLote}
               disabled={loteSalvando || !loteDataBase || isSemanaAberta}
-              className="flex items-center gap-2 bg-[#009A44] hover:bg-[#008A3D] disabled:bg-slate-400 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-sm"
+              className="flex justify-center items-center gap-2 bg-[#009A44] hover:bg-[#008A3D] disabled:bg-slate-400 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex-1"
             >
               {loteSalvando ? <Loader2 className="w-5 h-5 animate-spin" /> : <CalendarPlus className="w-5 h-5" />}
-              {loteTemFeriado ? 'Abrir Semana com Feriado' : 'Abrir Semana'}
+              <span className="truncate">{loteTemFeriado ? 'Abrir com Feriado' : 'Abrir Semana'}</span>
             </button>
 
             <button
               onClick={fecharEmLote}
               disabled={loteSalvando || !loteDataBase || resumo.length === 0}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-sm"
+              className="flex justify-center items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex-1"
             >
               {loteSalvando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-              Fechar Semana
+              <span className="truncate">Fechar Semana</span>
             </button>
 
             <button
               onClick={() => setModalConfig({ isOpen: true })}
-              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-colors shadow-sm ml-auto"
+              className="flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-colors shadow-sm w-full sm:w-auto sm:ml-auto"
             >
               Ajustes Manuais
             </button>
@@ -450,7 +469,7 @@ export default function AdminCalendarioPage() {
       </div>
 
       {/* Visão Geral (Confirmação Visual) */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 lg:p-8 relative">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 lg:p-8 relative">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-3">
           Painel de Controle - Datas Vigentes
           {isFetchingResumo && <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />}
@@ -675,7 +694,7 @@ export default function AdminCalendarioPage() {
                           className="flex items-center gap-2 text-sm font-semibold text-[#004B87] bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition-colors"
                         >
                           <CalendarPlus className="w-4 h-4" />
-                          Aplicar Grade Padrão {ehTenis ? '(Tênis 1h)' : '(2h)'}
+                          Aplicar Grade Padrão {ehTenis ? '(Tênis 1h)' : ehFutebol ? '(Futebol)' : '(2h)'}
                         </button>
 
                         <button
@@ -693,7 +712,7 @@ export default function AdminCalendarioPage() {
                           Grade Horária ({horariosEditando.length} períodos definidos)
                         </h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                          {(ehTenis ? SLOTS_TENIS : SLOTS_PADRAO).map((slot) => {
+                          {(ehTenis ? SLOTS_TENIS : ehFutebol ? (dataSelecionada?.getDay() === 6 ? SLOTS_FUTEBOL_SAB : dataSelecionada?.getDay() === 0 ? SLOTS_FUTEBOL_DOM : SLOTS_PADRAO) : SLOTS_PADRAO).map((slot) => {
                             const ativo = horariosEditando.includes(slot)
                             return (
                               <button
@@ -733,11 +752,11 @@ export default function AdminCalendarioPage() {
                         </div>
 
                         {/* Horários Selecionados que não são padrão */}
-                        {horariosEditando.filter(h => !(ehTenis ? SLOTS_TENIS : SLOTS_PADRAO).includes(h)).length > 0 && (
+                        {horariosEditando.filter(h => !(ehTenis ? SLOTS_TENIS : ehFutebol ? [...SLOTS_FUTEBOL_SAB, ...SLOTS_FUTEBOL_DOM, ...SLOTS_PADRAO] : SLOTS_PADRAO).includes(h)).length > 0 && (
                           <div className="mt-4">
                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Períodos excepcionais inseridos</h4>
                             <div className="flex flex-wrap gap-2">
-                              {horariosEditando.filter(h => !(ehTenis ? SLOTS_TENIS : SLOTS_PADRAO).includes(h)).map(slot => (
+                              {horariosEditando.filter(h => !(ehTenis ? SLOTS_TENIS : ehFutebol ? [...SLOTS_FUTEBOL_SAB, ...SLOTS_FUTEBOL_DOM, ...SLOTS_PADRAO] : SLOTS_PADRAO).includes(h)).map(slot => (
                                 <span key={slot} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 text-sm font-semibold border border-violet-200">
                                   {slot}
                                   <button onClick={() => toggleSlot(slot)} className="hover:text-red-600">

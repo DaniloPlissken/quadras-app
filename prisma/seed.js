@@ -50,12 +50,12 @@ async function main() {
   await criarModalidadeComQuadras('Tênis', ['Quadra 1'])
 
   await criarModalidadeComQuadras('Futebol', [
-    'Campo 1',
-    'Campo 2',
-    'Campo 3',
-    'Campo 4',
-    'Campo 5',
-    'Campo 6',
+    'Campo A',
+    'Campo B',
+    'Campo C',
+    'Campo D',
+    'Campo E',
+    'Campo F',
   ])
 
   console.log('Seed executado com sucesso!')

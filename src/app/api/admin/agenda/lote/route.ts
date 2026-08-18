@@ -15,6 +15,14 @@ const SLOTS_TENIS = [
   '18:00-19:00', '19:00-20:00', '20:00-21:00', '21:00-21:45',
 ]
 
+const SLOTS_FUTEBOL_SAB = [
+  '09:00-11:00', '14:00-16:00', '16:00-18:00'
+]
+
+const SLOTS_FUTEBOL_DOM = [
+  '08:00-10:00', '10:00-12:00', '15:00-17:00'
+]
+
 function parseDataUTC(data: string) {
   const [ano, mes, dia] = data.split('-').map(Number)
   return new Date(Date.UTC(ano, mes - 1, dia))
@@ -79,9 +87,18 @@ export async function POST(request: Request) {
 
     // Upsert para cada quadra em cada dia selecionado
     for (const quadra of quadras) {
-      const horarios = quadra.modalidade.nome === 'Tênis' ? [...SLOTS_TENIS] : [...SLOTS_PADRAO]
-      
       for (const data of datasParaInserir) {
+        let horarios = quadra.modalidade.nome === 'Tênis' ? [...SLOTS_TENIS] : [...SLOTS_PADRAO]
+        
+        if (quadra.modalidade.nome === 'Futebol') {
+          const diaDaSemana = data.getUTCDay()
+          if (diaDaSemana === 6) { // Sábado
+            horarios = [...SLOTS_FUTEBOL_SAB]
+          } else if (diaDaSemana === 0) { // Domingo
+            horarios = [...SLOTS_FUTEBOL_DOM]
+          }
+        }
+
         await prisma.agenda.upsert({
           where: {
             data_quadraId: {

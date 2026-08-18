@@ -1,4 +1,4 @@
-import { prisma, ensureDevEnvironment, gerarCpfValido, getDefaultPasswordHash, SLOTS_GERAL, SLOTS_TENIS, faker } from './utils';
+import { prisma, ensureDevEnvironment, gerarCpfValido, getDefaultPasswordHash, SLOTS_GERAL, SLOTS_TENIS, SLOTS_FUTEBOL_SAB, SLOTS_FUTEBOL_DOM, faker } from './utils';
 import { addDays, startOfDay, getDay } from 'date-fns';
 
 async function main() {
@@ -83,9 +83,15 @@ async function main() {
   for (const quadra of quadras) {
     const isTenis = quadra.modalidade.nome.toLowerCase() === 'tênis';
     const isFutebol = quadra.modalidade.nome.toLowerCase() === 'futebol';
-    const slots = isTenis ? SLOTS_TENIS : SLOTS_GERAL;
+    let slotsPadrao = isTenis ? SLOTS_TENIS : SLOTS_GERAL;
 
     for (const data of datasFinalSemana) {
+      let slots = slotsPadrao;
+      if (isFutebol) {
+        if (data.getDay() === 6) slots = SLOTS_FUTEBOL_SAB;
+        else if (data.getDay() === 0) slots = SLOTS_FUTEBOL_DOM;
+      }
+
       await prisma.agenda.upsert({
         where: { data_quadraId: { data, quadraId: quadra.id } },
         update: {},
