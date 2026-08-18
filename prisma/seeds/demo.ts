@@ -22,6 +22,19 @@ async function main() {
     }
   });
 
+  await prisma.user.upsert({
+    where: { email: 'cidadao@teste.com' },
+    update: {},
+    create: {
+      id: '12345678900',
+      name: 'Cidadão / Usuário Teste',
+      email: 'cidadao@teste.com',
+      password: pwd,
+      role: 'USER',
+      telefone: '34999999999',
+    }
+  });
+
   const quadras = await prisma.quadra.findMany({ include: { modalidade: true } });
   if (quadras.length === 0) {
     console.error('⛔ Nenhuma quadra encontrada. Rode "node prisma/seed.js" primeiro.');

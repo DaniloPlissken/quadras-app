@@ -19,13 +19,22 @@ async function main() {
   const cpfsUsados = new Set<string>();
   const usersToCreate = [];
   
-  // Garantir Admin
+  // Garantir Admin e Usuario Teste
   usersToCreate.push({
     id: 'admin',
     name: 'Admin FUTEL',
     email: 'admin@futel.mg.gov.br',
     password: pwd,
     role: 'ADMIN',
+  });
+
+  usersToCreate.push({
+    id: '12345678900',
+    name: 'Cidadão / Usuário Teste',
+    email: 'cidadao@teste.com',
+    password: pwd,
+    role: 'USER',
+    telefone: '34999999999',
   });
 
   for (let i = 0; i < QTD_USERS; i++) {
@@ -44,7 +53,7 @@ async function main() {
   }
   
   for (const u of usersToCreate) {
-    if (u.id === 'admin') {
+    if (u.id === 'admin' || u.id === '12345678900') {
       await prisma.user.upsert({
         where: { email: u.email },
         update: {},
@@ -53,7 +62,7 @@ async function main() {
     }
   }
   await prisma.user.createMany({ 
-    data: usersToCreate.filter(u => u.id !== 'admin') as any, 
+    data: usersToCreate.filter(u => u.id !== 'admin' && u.id !== '12345678900') as any, 
     skipDuplicates: true 
   });
   
