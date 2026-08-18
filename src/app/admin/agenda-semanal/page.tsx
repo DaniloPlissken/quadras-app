@@ -380,7 +380,7 @@ export default function AgendaSemanalPage() {
                     const cpf = formatarCPF(p.cpf);
                     const tel = p.telefone;
                     return (
-                      <div key={p.id} className="text-xs text-slate-500 mt-2 flex flex-col gap-0.5 border-t border-slate-200/60 pt-2 first:mt-1 first:border-t-0 first:pt-0">
+                      <div key={idx} className="text-xs text-slate-500 mt-2 flex flex-col gap-0.5 border-t border-slate-200/60 pt-2 first:mt-1 first:border-t-0 first:pt-0">
                         <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome}</span>
                         {cpf && <span>CPF: {cpf}</span>}
                         {tel && <span>Tel: {tel}</span>}
@@ -536,7 +536,7 @@ export default function AgendaSemanalPage() {
                                     const telDisp = t ? <a href={`tel:${t}`} className="hover:underline text-primary ml-1">{t}</a> : <span className="text-slate-400 ml-1">[Sem Tel]</span>;
                                     
                                     return (
-                                      <div key={p.id} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
+                                      <div key={idx} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
                                         <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome.toUpperCase()}</span>
                                         <span className="text-[10px]">CPF: {c || 'N/A'}</span>
                                         <span className="text-[10px]">Tel: {telDisp}</span>
@@ -654,7 +654,7 @@ export default function AgendaSemanalPage() {
                                     const telDisp = t ? <a href={`tel:${t}`} className="hover:underline text-primary ml-1">{t}</a> : <span className="text-slate-400 ml-1">[Sem Tel]</span>;
                                     
                                     return (
-                                      <div key={p.id} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
+                                      <div key={idx} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
                                         <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome.toUpperCase()}</span>
                                         <span className="text-[10px]">CPF: {c || 'N/A'}</span>
                                         <span className="text-[10px]">Tel: {telDisp}</span>
