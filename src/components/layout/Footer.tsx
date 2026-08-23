@@ -20,13 +20,22 @@ export function Footer() {
             ENDEREÇO
           </h3>
           <div className="h-[2px] bg-[#FFD100] w-full" />
-          <div className="text-[13px] text-white font-bold uppercase leading-relaxed space-y-2 mt-2">
-            <p>FUNDAÇÃO UBERLANDENSE DO TURISMO, ESPORTE E LAZER</p>
-            <p>
-              PARQUE DO SABIÁ – AV. JOSÉ ROBERTO MIGLIORINI, 850<br />
-              (EM FRENTE AO ESTACIONAMENTO DA ARENA SABIAZINHO)<br />
-              UBERLÂNDIA - MG
-            </p>
+          <div className="text-[13px] text-white font-bold uppercase leading-relaxed space-y-4 mt-2">
+            <p>FUTEL - FUNDAÇÃO UBERLANDENSE DO TURISMO, ESPORTE E LAZER</p>
+            <div>
+              <p className="text-[#FFD100] mb-0.5">PORTARIA TIBERY</p>
+              <p className="opacity-90">
+                R. HAIA, 147<br />
+                UBERLÂNDIA - MG
+              </p>
+            </div>
+            <div>
+              <p className="text-[#FFD100] mb-0.5">PORTARIA SANTA MÔNICA</p>
+              <p className="opacity-90">
+                AV. ANSELMO ALVES DOS SANTOS, 595<br />
+                UBERLÂNDIA - MG
+              </p>
+            </div>
           </div>
         </div>
 
@@ -53,13 +62,38 @@ export function Footer() {
           </h3>
           <div className="h-[2px] bg-[#FFD100] w-full" />
           <ul className="flex flex-col gap-3 text-[13px] text-white font-bold uppercase mt-2 mb-6">
-            <li><a href="https://www.uberlandia.mg.gov.br/prefeitura/orgaos-municipais/futel/" target="_blank" rel="noopener noreferrer" className="hover:text-[#FFD100] hover:underline underline-offset-4 transition-colors">Página Inicial</a></li>
-            <li><Link href="/reservas" className="hover:text-[#FFD100] hover:underline underline-offset-4 transition-colors">Agendamento de Quadras</Link></li>
+            <li>
+              <a 
+                href="https://www.uberlandia.mg.gov.br/prefeitura/orgaos-municipais/futel/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-[#FFD100] hover:underline underline-offset-4 transition-colors"
+              >
+                FUTEL
+              </a>
+            </li>
+            <li>
+              <a 
+                href="https://www.uberlandia.mg.gov.br/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-[#FFD100] hover:underline underline-offset-4 transition-colors"
+              >
+                Prefeitura de Uberlândia
+              </a>
+            </li>
           </ul>
 
-          <div className="mt-auto flex flex-col pt-4">
-            <span className="font-bold text-[14px] leading-tight text-[#00A0E3] uppercase tracking-wider">PREFEITURA DE</span>
-            <span className="font-black text-[22px] leading-tight text-white uppercase tracking-wider">UBERLÂNDIA</span>
+          <div className="mt-auto flex pt-4">
+            <a href="https://www.uberlandia.mg.gov.br/" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
+              <Image
+                src="/logo-prefeitura-hd.png"
+                alt="Prefeitura de Uberlândia"
+                width={400}
+                height={120}
+                className="h-20 md:h-24 w-auto object-contain object-left"
+              />
+            </a>
           </div>
         </div>
 

@@ -40,26 +40,30 @@ export function Header() {
       {/* Main bar */}
       <div className="bg-white border-b border-slate-200 shadow-sm relative">
         <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between h-20 md:h-28">
-          {/* Left: Logo */}
-          <Link href="/" className="flex items-center shrink-0 z-10">
-            <Image
-              src="/logo-prefeitura-hd.png"
-              alt="Prefeitura de Uberlândia"
-              width={350}
-              height={100}
-              className="h-14 md:h-20 w-auto object-contain"
-              priority
-            />
+          {/* Left: Logo FUTEL */}
+          <Link href="/" className="flex flex-col shrink-0 z-10 w-fit hover:opacity-90 transition-opacity">
+            <span className="text-[28px] md:text-[34px] font-black text-[#009A44] leading-none">FUTEL</span>
+            <span className="text-[9px] md:text-[11px] font-medium text-[#004B87] leading-[1.2] uppercase mt-0.5">
+              FUNDAÇÃO UBERLANDENSE<br />DO TURISMO, ESPORTE E LAZER
+            </span>
           </Link>
 
-          {/* Center: Title (Hidden on mobile) */}
-          <div className="hidden md:flex flex-col items-center justify-center absolute left-1/2 -translate-x-1/2">
-            <h1 className="text-2xl font-black tracking-widest text-[#009A44] uppercase flex items-center gap-2">
-              FUTEL
-            </h1>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-              Agendamento de Quadras
-            </p>
+          {/* Center: Title / Logo */}
+          <div className={`flex flex-col items-center justify-center absolute left-1/2 -translate-x-1/2 ${pathname !== '/login' ? 'hidden md:flex' : ''}`}>
+            {pathname === '/login' ? (
+              <Image
+                src="/logo-prefeitura-hd.png"
+                alt="Prefeitura de Uberlândia"
+                width={250}
+                height={80}
+                className="h-16 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <h1 className="text-lg md:text-[22px] font-bold tracking-normal text-[#009A44] uppercase">
+                AGENDAMENTO DE QUADRAS
+              </h1>
+            )}
           </div>
 
           {/* Right side: User area */}
@@ -111,13 +115,15 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-[#004B87] hover:bg-[#003666] transition-all uppercase shadow-md"
-              >
-                <User className="w-4 h-4" />
-                Entrar
-              </Link>
+              !pathname.startsWith('/login') && (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-[#004B87] hover:bg-[#003666] transition-all uppercase shadow-md"
+                >
+                  <User className="w-4 h-4" />
+                  Entrar
+                </Link>
+              )
             )}
           </div>
         </div>

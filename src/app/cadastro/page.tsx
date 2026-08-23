@@ -116,11 +116,11 @@ export default function CadastroPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>CPF *</Label>
-                    <Input name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00" required />
+                    <Input name="cpf" value={formData.cpf} onChange={handleChange} placeholder="Somente números" inputMode="numeric" required />
                   </div>
                   <div className="space-y-2">
                     <Label>Telefone / WhatsApp *</Label>
-                    <Input name="telefone" value={formData.telefone} onChange={handleChange} placeholder="(00) 00000-0000" required />
+                    <Input name="telefone" value={formData.telefone} onChange={handleChange} placeholder="Somente números" inputMode="numeric" required />
                   </div>
                 </div>
                 <div className="space-y-2">

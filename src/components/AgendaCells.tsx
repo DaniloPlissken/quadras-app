@@ -19,11 +19,12 @@ export function CellLivre() {
 interface CellReservaProps {
   infoTexto: React.ReactNode;
   subInfo: React.ReactNode;
+  className?: string;
 }
 
-export function CellReserva({ infoTexto, subInfo }: CellReservaProps) {
+export function CellReserva({ infoTexto, subInfo, className = '' }: CellReservaProps) {
   return (
-    <td className="border-2 border-[#004B87] bg-blue-50/30 p-2 align-middle hover:bg-blue-50 transition-colors cursor-default">
+    <td className={`border-2 border-[#004B87] bg-blue-50/30 p-2 align-middle hover:bg-blue-50 transition-colors cursor-default ${className}`}>
       <div className="font-bold text-slate-900 text-sm">{infoTexto}</div>
       <div className="text-slate-600 font-medium mt-1">{subInfo}</div>
     </td>

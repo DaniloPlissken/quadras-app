@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="relative w-full max-w-[500px] bg-white pt-16 pb-10 px-8 sm:px-12 shadow-xl mx-4 mt-16 border border-slate-200">
         {/* Header Azul sobreposto */}
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-[90%] bg-[#005191] py-4 shadow-lg rounded-sm">
-          <h2 className="text-center text-white text-xl sm:text-2xl font-bold">Portal de Serviços</h2>
+          <h2 className="text-center text-white text-xl sm:text-2xl font-bold">Entrar</h2>
         </div>
         
         <form onSubmit={handleLogin} className="mt-4 space-y-10">
@@ -56,7 +56,8 @@ export default function LoginPage() {
             <input 
               id="cpf" 
               type="text"
-              placeholder="Usuário (CPF)" 
+              placeholder="CPF (somente números)" 
+              inputMode="numeric"
               value={cpf}
               onChange={(e) => setCpf(handleMascaraCPF(e.target.value))}
               required 

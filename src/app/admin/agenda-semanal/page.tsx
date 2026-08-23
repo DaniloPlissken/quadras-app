@@ -236,11 +236,16 @@ export default function AgendaSemanalPage() {
         min-width: 0 !important;
         table-layout: fixed;
       }
-      th, td {
-        padding: 3px !important;
-        font-size: 9px !important;
+      th, td, th *, td * {
+        padding: 1px !important;
+        margin: 0 !important;
+        font-size: 8px !important;
+        line-height: 1.1 !important;
         word-wrap: break-word;
       }
+      h2, h3 { margin: 0 !important; padding: 2px 0 !important; font-size: 12px !important; }
+      .p-4, .py-3, .px-4, .p-8, .p-3, .p-2.5, .p-2 { padding: 1px !important; }
+      .mb-6, .mt-12, .mb-12, .mt-8, .mb-4, .space-y-12 > :not([hidden]) ~ :not([hidden]), .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 0 !important; margin-bottom: 2px !important; }
       tr    { page-break-inside: avoid; page-break-after: auto }
       thead { display: table-header-group }
       tfoot { display: table-footer-group }
@@ -449,8 +454,8 @@ export default function AgendaSemanalPage() {
 
             {/* Desktop Table View */}
             <div className="hidden md:block print:block space-y-12">
-              {quadrasPorModalidade.filter(([mod]) => mod.toLowerCase() !== 'futebol').map(([modalidade, quadrasModalidade]) => (
-                <div key={modalidade} className="break-inside-avoid bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:border-none print:shadow-none print:rounded-none">
+              {quadrasPorModalidade.filter(([mod]) => mod.toLowerCase() !== 'futebol').map(([modalidade, quadrasModalidade], idx) => (
+                <div key={modalidade} className={`break-inside-avoid bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:border-none print:shadow-none print:rounded-none ${idx > 0 ? 'print:break-before-page' : ''}`}>
                   <div className="bg-[#004B87] border-b-[3px] border-[#FFD100] px-4 py-3 print:bg-transparent print:border-b-2 print:border-slate-800 print:text-black">
                     <h2 className="text-lg font-black text-white uppercase tracking-widest print:text-slate-800">
                       {modalidade}
@@ -464,11 +469,11 @@ export default function AgendaSemanalPage() {
                       <th className="border border-slate-200 bg-slate-50 p-3 text-center font-bold text-slate-500 uppercase w-20">
                         Horário
                       </th>
-                      {weekDays.map(day => (
+                      {weekDays.map((day, dIdx) => (
                         <th 
                           key={formatarDataLocal(day)} 
                           colSpan={quadrasModalidade.length} 
-                          className="border border-slate-200 bg-slate-100 p-3 text-center font-bold text-slate-700 uppercase"
+                          className={`border border-slate-200 bg-slate-100 p-3 text-center font-bold text-slate-700 uppercase ${dIdx > 0 ? 'border-l-4 border-l-black' : ''}`}
                         >
                           {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}. {day.getDate()}/{day.getMonth() + 1}
                         </th>
@@ -478,11 +483,11 @@ export default function AgendaSemanalPage() {
                     {weekDays.length > 0 && (
                       <tr>
                         <th className="border border-slate-200 bg-white p-1"></th>
-                        {weekDays.map(day => (
-                          quadrasModalidade.map(q => (
+                        {weekDays.map((day, dIdx) => (
+                          quadrasModalidade.map((q, qIdx) => (
                             <th 
                               key={`${formatarDataLocal(day)}-${q.id}-header`} 
-                              className="border border-slate-200 bg-white p-2.5 text-center font-bold text-slate-600 uppercase text-[11px]"
+                              className={`border border-slate-200 bg-white p-2.5 text-center font-bold text-slate-600 uppercase text-[11px] ${dIdx > 0 && qIdx === 0 ? 'border-l-4 border-l-black' : ''}`}
                             >
                               {q.nome}
                             </th>
@@ -509,17 +514,17 @@ export default function AgendaSemanalPage() {
                         <td className="border border-slate-200 bg-slate-50 font-bold p-3 text-center whitespace-nowrap text-slate-700">
                           {slot.split(' - ')[0] || slot}
                         </td>
-                        {weekDays.map(day => {
+                        {weekDays.map((day, dIdx) => {
                           const dataStr = formatarDataLocal(day)
                           
-                          return quadrasModalidade.map(quadra => {
+                          return quadrasModalidade.map((quadra, qIdx) => {
                             const agenda = agendasMap.get(`${dataStr}-${quadra.id}`)
                             const isAberto = agenda?.horarios.includes(slot)
                             const reserva = reservasMap.get(`${dataStr}-${slot}-${quadra.id}`)
 
                             // Célula vazia/fechada
                             if (!reserva) {
-                              return <td key={`${dataStr}-${quadra.id}`} className="bg-white border border-slate-200"></td>
+                              return <td key={`${dataStr}-${quadra.id}`} className={`bg-white border border-slate-200 ${dIdx > 0 && qIdx === 0 ? 'border-l-4 border-l-black' : ''}`}></td>
                             }
 
                             // Célula com Reserva
@@ -577,6 +582,7 @@ export default function AgendaSemanalPage() {
                                   key={`${dataStr}-${quadra.id}`}
                                   infoTexto={infoTexto}
                                   subInfo={subInfo}
+                                  className={dIdx > 0 && qIdx === 0 ? 'border-l-4 border-l-black' : ''}
                                 />
                               )
                           })
@@ -605,107 +611,99 @@ export default function AgendaSemanalPage() {
                       {modalidade}
                     </h2>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-max border-collapse text-xs">
-                  <thead>
-                    <tr>
-                      <th className="border border-slate-200 bg-slate-50 p-3 text-center font-bold text-slate-500 uppercase w-20">
-                        Horário
-                      </th>
-                      {weekDays.map(day => (
-                        <th key={formatarDataLocal(day)} colSpan={quadrasModalidade.length} className="border border-slate-200 bg-slate-100 p-3 text-center font-bold text-slate-700 uppercase">
-                          {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}. {day.getDate()}/{day.getMonth() + 1}
-                        </th>
-                      ))}
-                    </tr>
-                    {weekDays.length > 0 && (
-                      <tr>
-                        <th className="border border-slate-200 bg-white p-1"></th>
-                        {weekDays.map(day => (
-                          quadrasModalidade.map(q => (
-                            <th key={`${formatarDataLocal(day)}-${q.id}-header`} className="border border-slate-200 bg-white p-2.5 text-center font-bold text-slate-600 uppercase text-[11px]">
-                              {q.nome}
-                            </th>
-                          ))
-                        ))}
-                      </tr>
-                    )}
-                  </thead>
-                  <tbody>
-                    {allSlots.map(slot => {
-                      const hasAnyActivityInSlot = weekDays.some(day => {
-                        const dataStr = formatarDataLocal(day)
-                        return quadrasModalidade.some(quadra => !!reservasMap.get(`${dataStr}-${slot}-${quadra.id}`))
-                      })
-                      if (!hasAnyActivityInSlot) return null;
+                  {/* FUTEBOL SEPARADO POR DIA */}
+                  <div className="mt-4">
+                    {weekDays.map((singleDay, sdIdx) => {
+                      const dataStrSingle = formatarDataLocal(singleDay);
+                      
+                      // Filtra os slots para verificar se há alguma reserva nesse dia
+                      const slotsForDay = allSlots.filter(slot => {
+                        return quadrasModalidade.some(quadra => !!reservasMap.get(`${dataStrSingle}-${slot}-${quadra.id}`))
+                      });
+
+                      if (slotsForDay.length === 0) return null;
 
                       return (
-                      <tr key={slot}>
-                        <td className="border border-slate-200 bg-slate-50 font-bold p-3 text-center whitespace-nowrap text-slate-700">{slot.split(' - ')[0] || slot}</td>
-                        {weekDays.map(day => {
-                          const dataStr = formatarDataLocal(day)
-                          return quadrasModalidade.map(quadra => {
-                            const reserva = reservasMap.get(`${dataStr}-${slot}-${quadra.id}`)
-                            if (!reserva) return <td key={`${dataStr}-${quadra.id}`} className="bg-white border border-slate-200"></td>
-                            
-                            let infoTexto: React.ReactNode = ''
-                            let subInfo: React.ReactNode = ''
-                            
-                            if (reserva.isAdminReserva) {
-                              infoTexto = <>{(reserva.motivo?.toUpperCase() || 'RESERVA INTERNA')} <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded ml-1 font-bold">INTERNA</span></>
-                              subInfo = (
-                                <div className="flex flex-col gap-0.5 mt-1 leading-tight text-slate-500">
-                                  <span>{reserva.user?.name ? `Por: ${reserva.user.name}` : 'Ação Administrativa'}</span>
-                                </div>
-                              )
-                            } else if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
-                              infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
-                              subInfo = (
-                                <div className="flex flex-col gap-2 mt-1 leading-tight">
-                                  {reserva.time.responsaveis.map((rLink, idx) => {
-                                    const p = rLink.pessoa;
-                                    if (!p) return null;
-                                    const c = formatarCPF(p.cpf);
-                                    const t = p.telefone;
-                                    const telDisp = t ? <a href={`tel:${t}`} className="hover:underline text-primary ml-1">{t}</a> : <span className="text-slate-400 ml-1">[Sem Tel]</span>;
+                        <div key={dataStrSingle} className={`mb-12 ${sdIdx > 0 ? 'print:break-before-page' : ''}`}>
+                          <h3 className="text-xl font-bold text-slate-800 mb-4 uppercase border-b-2 border-slate-200 pb-2">
+                            {singleDay.toLocaleDateString('pt-BR', { weekday: 'long' })}, {singleDay.getDate()}/{singleDay.getMonth() + 1}
+                          </h3>
+                          <table className="w-full min-w-max border-collapse text-xs">
+                            <thead>
+                              <tr>
+                                <th className="border border-slate-200 bg-slate-50 p-2 text-center font-bold text-slate-500 uppercase w-20">
+                                  Horário
+                                </th>
+                                {quadrasModalidade.map(q => (
+                                  <th key={`${dataStrSingle}-${q.id}-header`} className="border border-slate-200 bg-slate-100 p-2 text-center font-bold text-slate-700 uppercase text-[10px]">
+                                    {q.nome}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {slotsForDay.map(slot => (
+                                <tr key={slot}>
+                                  <td className="border border-slate-200 bg-slate-50 font-bold p-2 text-center whitespace-nowrap text-slate-700">
+                                    {slot.split(' - ')[0] || slot}
+                                  </td>
+                                  {quadrasModalidade.map(quadra => {
+                                    const reserva = reservasMap.get(`${dataStrSingle}-${slot}-${quadra.id}`)
+                                    if (!reserva) return <td key={`${dataStrSingle}-${quadra.id}`} className="bg-white border border-slate-200"></td>
                                     
-                                    return (
-                                      <div key={idx} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
-                                        <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome.toUpperCase()}</span>
-                                        <span className="text-[10px]">CPF: {c || 'N/A'}</span>
-                                        <span className="text-[10px]">Tel: {telDisp}</span>
-                                      </div>
-                                    )
+                                    let infoTexto: React.ReactNode = ''
+                                    let subInfo: React.ReactNode = ''
+                                    
+                                    if (reserva.isAdminReserva) {
+                                      infoTexto = <>{(reserva.motivo?.toUpperCase() || 'RESERVA INTERNA')} <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded ml-1 font-bold">INTERNA</span></>
+                                      subInfo = (
+                                        <div className="flex flex-col gap-0.5 mt-1 leading-tight text-slate-500">
+                                          <span>{reserva.user?.name ? `Por: ${reserva.user.name}` : 'Ação Administrativa'}</span>
+                                        </div>
+                                      )
+                                    } else if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
+                                      infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
+                                      subInfo = (
+                                        <div className="flex flex-col gap-2 mt-1 leading-tight">
+                                          {reserva.time.responsaveis.map((rLink, idx) => {
+                                            const p = rLink.pessoa;
+                                            if (!p) return null;
+                                            const c = formatarCPF(p.cpf);
+                                            const t = p.telefone;
+                                            const telDisp = t ? <a href={`tel:${t}`} className="hover:underline text-primary ml-1">{t}</a> : <span className="text-slate-400 ml-1">[Sem Tel]</span>;
+                                            
+                                            return (
+                                              <div key={idx} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-200/60 last:border-0 last:pb-0">
+                                                <span className="font-semibold text-slate-700">Resp {idx + 1}: {p.nome.toUpperCase()}</span>
+                                                <span className="text-[10px]">CPF: {c || 'N/A'}</span>
+                                                <span className="text-[10px]">Tel: {telDisp}</span>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      )
+                                    } else {
+                                      const telClean = reserva.user?.telefone || ''
+                                      const cpfClean = formatarCPF(reserva.user?.id || '')
+                                      const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
+                                      
+                                      infoTexto = reserva.user?.name?.toUpperCase() || 'ADMIN'
+                                      subInfo = (
+                                        <div className="flex flex-col gap-0.5 mt-1 leading-tight">
+                                          <span>CPF: {cpfClean || 'N/A'}</span>
+                                          <span>Tel: {telDisplay}</span>
+                                        </div>
+                                      )
+                                    }
+                                    return <CellReserva key={`${dataStrSingle}-${quadra.id}`} infoTexto={infoTexto} subInfo={subInfo} />
                                   })}
-                                </div>
-                              )
-                            } else {
-                              const telClean = reserva.user?.telefone || ''
-                              const cpfClean = formatarCPF(reserva.user?.id || '')
-                              const telDisplay = telClean ? <a href={`tel:${telClean}`} className="hover:underline text-primary ml-1">{telClean}</a> : <span className="text-slate-400 ml-1">[Sem Telefone]</span>
-                              
-                              infoTexto = reserva.user?.name?.toUpperCase() || 'ADMIN'
-                              subInfo = (
-                                <div className="flex flex-col gap-0.5 mt-1 leading-tight">
-                                  <span>CPF: {cpfClean || 'N/A'}</span>
-                                  <span>Tel: {telDisplay}</span>
-                                </div>
-                              )
-                            }
-
-                            return <CellReserva key={`${dataStr}-${quadra.id}`} infoTexto={infoTexto} subInfo={subInfo} />
-                          })
-                        })}
-                      </tr>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       )
                     })}
-                    {allSlots.length === 0 && (
-                      <tr>
-                        <td colSpan={(weekDays.length * quadrasModalidade.length) + 1} className="p-8 text-center text-slate-500 border border-slate-200 font-medium">Nenhuma agenda disponível para a semana base selecionada.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
                   </div>
                 </div>
             ))}
