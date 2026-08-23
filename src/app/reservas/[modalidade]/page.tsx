@@ -413,14 +413,28 @@ if (!session) {
                     return (
                       <button
                         key={slot}
-                        disabled={ocupado || carregando || bloqueado}
+                        disabled={carregando || bloqueado}
                         onClick={() => {
+                          if (ocupado) {
+                            toast.error('Este horário já está reservado.', {
+                              description: (
+                                <div className="mt-1 flex flex-col gap-1">
+                                  <span className="text-white">Para cancelamentos, ligue exclusivamente para:</span>
+                                  <a href="tel:34997894420" className="font-bold text-white underline bg-white/20 px-2 py-1 rounded w-fit mt-1">
+                                    (34) 99789-4420
+                                  </a>
+                                </div>
+                              ),
+                              duration: 8000
+                            })
+                            return
+                          }
                           setSlotSelecionado(slot)
                           setIsModalOpen(true)
                         }}
                         className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 border-2
                           ${ocupado 
-                            ? 'bg-slate-50 border-transparent cursor-not-allowed' 
+                            ? 'bg-red-50 border-red-100 cursor-not-allowed hover:border-red-300' 
                             : bloqueado
                               ? 'bg-slate-50 border-slate-100 cursor-not-allowed'
                               : 'bg-white border-slate-100 hover:border-[#004B87] hover:shadow-xl hover:shadow-[#004B87]/10 hover:-translate-y-1 cursor-pointer'
@@ -428,18 +442,18 @@ if (!session) {
                         `}
                       >
                         <div className="flex flex-col gap-3">
-                          <span className={`text-2xl font-black tracking-tight transition-colors ${ocupado ? 'text-slate-400' : 'text-slate-800 group-hover:text-[#004B87]'}`}>
+                          <span className={`text-2xl font-black tracking-tight transition-colors ${ocupado ? 'text-red-800' : 'text-slate-800 group-hover:text-[#004B87]'}`}>
                             {slot}
                           </span>
                           <span className={`text-[11px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider w-fit
                             ${ocupado 
-                              ? 'bg-slate-200 text-slate-500' 
+                              ? 'bg-red-100 text-red-600' 
                               : bloqueado 
                                 ? 'bg-slate-200 text-slate-400'
                                 : 'bg-[#009A44]/10 text-[#009A44] group-hover:bg-[#004B87] group-hover:text-white transition-colors'
                             }
                           `}>
-                            {ocupado ? 'Ocupado' : bloqueado ? 'Bloqueado' : 'Livre para reservar'}
+                            {ocupado ? 'Reservado / Indisponível' : bloqueado ? 'Bloqueado' : 'Livre para reservar'}
                           </span>
                         </div>
                       </button>

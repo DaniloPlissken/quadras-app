@@ -22,6 +22,7 @@ enum ReservaStatus {
 enum TimeStatus {
   PENDENTE
   APTO
+  INAPTO
   SUSPENSO
   INATIVO
 }
@@ -102,6 +103,7 @@ model Time {
   conferidoEm           DateTime?
   metodoConferencia     MetodoConferencia?
   observacaoConferencia String?
+  motivoInaptidao       String?
 
   conferidoPor          User?              @relation("TimeConferidoPor", fields: [conferidoPorId], references: [id])
   responsaveis          ResponsavelTime[]

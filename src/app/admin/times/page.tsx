@@ -32,10 +32,11 @@ type ResponsavelResponse = {
 type Time = {
   id: string
   nome: string
-  status: 'PENDENTE' | 'APTO' | 'SUSPENSO' | 'INATIVO'
+  status: 'PENDENTE' | 'APTO' | 'SUSPENSO' | 'INATIVO' | 'INAPTO'
   metodoConferencia?: string
   conferidoEm?: string
   conferidoPorId?: string
+  motivoInaptidao?: string
   createdAt: string
   responsaveis: ResponsavelResponse[]
 }
@@ -322,6 +323,8 @@ export default function AdminTimesPage() {
   const [metodoConf, setMetodoConf] = useState('CONFERENCIA_EXTERNA')
   const [obsConf, setObsConf] = useState('')
 
+  const [modalInapto, setModalInapto] = useState<{isOpen: boolean, timeId: string, motivo: string, action: 'INAPTO' | 'APTO'}>({isOpen: false, timeId: '', motivo: '', action: 'INAPTO'})
+
   async function confirmarConferencia(e: React.FormEvent) {
     e.preventDefault()
     if (!timeParaConferir) return
@@ -346,6 +349,39 @@ export default function AdminTimesPage() {
     } else {
       const err = await res.json()
       toast.error(err.error || 'Erro ao conferir time.')
+    }
+  }
+
+  async function toggleAptidao(e: React.FormEvent) {
+    e.preventDefault()
+    if (modalInapto.action === 'INAPTO' && !modalInapto.motivo.trim()) {
+      toast.error('O motivo é obrigatório para tornar inapto.')
+      return
+    }
+    
+    setSalvando(true)
+    try {
+      const res = await fetch('/api/admin/times/aptidao', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timeId: modalInapto.timeId,
+          novoStatus: modalInapto.action,
+          motivo: modalInapto.motivo
+        })
+      })
+      if (res.ok) {
+        toast.success(modalInapto.action === 'INAPTO' ? 'Time marcado como INAPTO.' : 'Time reativado como APTO.')
+        setModalInapto({ isOpen: false, timeId: '', motivo: '', action: 'INAPTO' })
+        carregarTimes()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Erro ao alterar aptidão.')
+      }
+    } catch (err) {
+      toast.error('Erro de conexão ao alterar aptidão.')
+    } finally {
+      setSalvando(false)
     }
   }
 
@@ -437,9 +473,33 @@ export default function AdminTimesPage() {
                     <span className="font-bold text-slate-800 text-base">{time.nome}</span>
                     <div className="shrink-0">
                       {time.status === 'APTO' && (
-                        <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                          <CheckCircle className="w-3 h-3" /> Apto
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                            <CheckCircle className="w-3 h-3" /> Apto
+                          </span>
+                          <button
+                            onClick={() => setModalInapto({ isOpen: true, timeId: time.id, motivo: '', action: 'INAPTO' })}
+                            className="text-[10px] font-bold tracking-wider text-red-500 hover:text-red-700 bg-transparent hover:bg-red-50 px-2 py-1 rounded-md transition-colors border border-red-100 uppercase flex items-center"
+                          >
+                            Tornar Inapto
+                          </button>
+                        </div>
+                      )}
+                      {time.status === 'INAPTO' && (
+                        <div className="flex flex-col gap-1 items-start mt-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-200">
+                              <XCircle className="w-3 h-3" /> Inapto
+                            </span>
+                            <button
+                              onClick={() => setModalInapto({ isOpen: true, timeId: time.id, motivo: 'Reativado pela administração', action: 'APTO' })}
+                              className="text-[10px] font-bold tracking-wider text-[#009A44] hover:text-[#008A3D] bg-transparent hover:bg-[#009A44]/10 px-2 py-1 rounded-md transition-colors border border-[#009A44]/20 uppercase flex items-center"
+                            >
+                              Reativar
+                            </button>
+                          </div>
+                          <span className="text-[9px] font-medium text-red-500 opacity-80 max-w-[200px] truncate" title={time.motivoInaptidao || ''}>{time.motivoInaptidao}</span>
+                        </div>
                       )}
                       {time.status === 'PENDENTE' && (
                         <span className="inline-flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
@@ -504,6 +564,7 @@ export default function AdminTimesPage() {
                           Conferir
                         </button>
                       )}
+
                       <button
                         onClick={() => abrirEdicao(time)}
                         className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg transition-colors"
@@ -543,9 +604,33 @@ export default function AdminTimesPage() {
                       <span className="font-medium">{time.nome}</span>
                       <div>
                         {time.status === 'APTO' && (
-                          <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-0.5 rounded-full text-xs font-semibold" title="Time Apto">
-                            <CheckCircle className="w-3 h-3" /> Apto
-                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center gap-1 text-[#009A44] bg-[#009A44]/10 px-2 py-0.5 rounded-full text-xs font-semibold" title="Time Apto">
+                              <CheckCircle className="w-3 h-3" /> Apto
+                            </span>
+                            <button
+                              onClick={() => setModalInapto({ isOpen: true, timeId: time.id, motivo: '', action: 'INAPTO' })}
+                              className="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-700 bg-transparent hover:bg-red-50 px-2 py-0.5 rounded-full transition-colors opacity-0 group-hover:opacity-100 flex items-center"
+                            >
+                              Tornar Inapto
+                            </button>
+                          </div>
+                        )}
+                        {time.status === 'INAPTO' && (
+                          <div className="flex flex-col items-start mt-1 gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs font-semibold border border-red-200">
+                                <XCircle className="w-3 h-3" /> Inapto
+                              </span>
+                              <button
+                                onClick={() => setModalInapto({ isOpen: true, timeId: time.id, motivo: 'Reativado pela administração', action: 'APTO' })}
+                                className="text-[10px] font-bold uppercase tracking-wider text-[#009A44] hover:text-[#008A3D] bg-transparent hover:bg-[#009A44]/10 px-2 py-0.5 rounded-full transition-colors opacity-0 group-hover:opacity-100 flex items-center"
+                              >
+                                Reativar
+                              </button>
+                            </div>
+                            <span className="text-[10px] font-medium text-red-500 opacity-80 max-w-[200px] truncate" title={time.motivoInaptidao || ''}>{time.motivoInaptidao}</span>
+                          </div>
                         )}
                         {time.status === 'PENDENTE' && (
                           <span className="inline-flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full text-xs font-semibold" title="Aguardando Conferência">
@@ -608,6 +693,7 @@ export default function AdminTimesPage() {
                         Conferir Time
                       </button>
                     )}
+
                     <button
                       onClick={() => abrirEdicao(time)}
                       className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
@@ -675,6 +761,58 @@ export default function AdminTimesPage() {
               >
                 {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
                 Tornar Time APTO
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Inapto */}
+      {modalInapto.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <form onSubmit={toggleAptidao} className="bg-white rounded-2xl w-full max-w-md p-6 space-y-6 shadow-xl">
+            <h2 className="text-xl font-bold text-slate-800">
+              {modalInapto.action === 'INAPTO' ? 'Tornar Time Inapto' : 'Reativar Time'}
+            </h2>
+            
+            {modalInapto.action === 'INAPTO' ? (
+              <>
+                <p className="text-sm text-slate-500">
+                  Um time Inapto não poderá realizar novas reservas até ser reativado.
+                </p>
+                <div>
+                  <label className="text-sm font-semibold text-slate-700">Motivo da inaptidão / infração <span className="text-red-500">*</span></label>
+                  <textarea
+                    value={modalInapto.motivo}
+                    onChange={(e) => setModalInapto(prev => ({...prev, motivo: e.target.value}))}
+                    rows={3}
+                    required
+                    className="w-full mt-1 border border-slate-300 rounded-lg p-2 text-sm"
+                    placeholder="Ex: Time não compareceu ao jogo sem aviso prévio."
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">
+                Tem certeza que deseja reativar a aptidão deste time?
+              </p>
+            )}
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setModalInapto({isOpen: false, timeId: '', motivo: '', action: 'INAPTO'})}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={salvando}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${modalInapto.action === 'INAPTO' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+              >
+                {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
+                {modalInapto.action === 'INAPTO' ? 'Tornar Inapto' : 'Confirmar Reativação'}
               </button>
             </div>
           </form>
