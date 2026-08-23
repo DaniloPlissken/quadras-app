@@ -253,88 +253,90 @@ export default function AgendaSemanalPage() {
       
       {/* Controles (não aparecem na impressão) */}
       <div className="no-print space-y-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        {/* Cabeçalho e Botões */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 no-print">
           <div>
-            <h1 className="hidden md:block text-3xl font-bold text-slate-800">Agenda Geral</h1>
+            <h1 className="text-3xl font-bold text-slate-800">Agenda Geral</h1>
             <p className="text-slate-500 mt-1">Ocupação das quadras e campos.</p>
           </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-wrap gap-4 items-end no-print">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Semana Base</label>
+            <input
+              type="date"
+              value={dataBase}
+              onChange={e => setDataBase(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[160px]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Modalidade</label>
+            <select
+              value={modalidadeSelecionada}
+              onChange={e => {
+                setModalidadeSelecionada(e.target.value)
+                setQuadraSelecionada('todas') // Reseta a quadra ao mudar modalidade
+              }}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
+            >
+              <option value="todas">Todas</option>
+              {modalidades.map(mod => (
+                <option key={mod} value={mod}>{mod}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Quadra</label>
+            <select
+              value={quadraSelecionada}
+              onChange={e => setQuadraSelecionada(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
+            >
+              <option value="todas">Todas</option>
+              {todasQuadras
+                .filter(q => modalidadeSelecionada === 'todas' || q.modalidade.nome === modalidadeSelecionada)
+                .map(q => (
+                <option key={q.id} value={q.id}>{q.nome}</option>
+              ))}
+            </select>
+          </div>
           
-          <div className="flex flex-wrap gap-4 items-end">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Semana Base</label>
-              <input
-                type="date"
-                value={dataBase}
-                onChange={e => setDataBase(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[160px]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Modalidade</label>
-              <select
-                value={modalidadeSelecionada}
-                onChange={e => {
-                  setModalidadeSelecionada(e.target.value)
-                  setQuadraSelecionada('todas') // Reseta a quadra ao mudar modalidade
-                }}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
-              >
-                <option value="todas">Todas</option>
-                {modalidades.map(mod => (
-                  <option key={mod} value={mod}>{mod}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Quadra</label>
-              <select
-                value={quadraSelecionada}
-                onChange={e => setQuadraSelecionada(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#004B87] text-slate-800 bg-white min-w-[140px]"
-              >
-                <option value="todas">Todas</option>
-                {todasQuadras
-                  .filter(q => modalidadeSelecionada === 'todas' || q.modalidade.nome === modalidadeSelecionada)
-                  .map(q => (
-                  <option key={q.id} value={q.id}>{q.nome}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  const [ano, mes, dia] = dataBase.split('-');
-                  const filename = `quadras-app-${dia}-${mes}-${ano}`;
-                  const data = prepareExportData(weekDays, allSlots, quadrasFiltradas, agendasMap, reservasMap);
-                  downloadCSV(data, filename);
-                }}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all shadow-sm h-11"
-                title="Exportar para CSV"
-              >
-                <FileText className="w-4 h-4" /> CSV
-              </button>
-              <button
-                onClick={() => {
-                  const [ano, mes, dia] = dataBase.split('-');
-                  const filename = `quadras-app-${dia}-${mes}-${ano}`;
-                  downloadExcel(weekDays, allSlots, quadrasFiltradas, agendasMap, reservasMap, filename);
-                }}
-                className="flex items-center gap-2 bg-[#004B87] hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-semibold transition-all shadow-sm h-11"
-                title="Exportar para Excel"
-              >
-                <FileSpreadsheet className="w-4 h-4" /> Excel
-              </button>
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all shadow-sm h-11"
-                title="Imprimir Relatório"
-              >
-                <Printer className="w-4 h-4" /> Imprimir
-              </button>
-            </div>
+          <div className="flex gap-2 items-center ml-auto">
+            <button
+              onClick={() => {
+                const [ano, mes, dia] = dataBase.split('-');
+                const filename = `quadras-app-${dia}-${mes}-${ano}`;
+                const data = prepareExportData(weekDays, allSlots, quadrasFiltradas, agendasMap, reservasMap);
+                downloadCSV(data, filename);
+              }}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm h-11"
+              title="Exportar para CSV"
+            >
+              <FileText className="w-4 h-4" /> CSV
+            </button>
+            <button
+              onClick={() => {
+                const [ano, mes, dia] = dataBase.split('-');
+                const filename = `quadras-app-${dia}-${mes}-${ano}`;
+                downloadExcel(weekDays, allSlots, quadrasFiltradas, agendasMap, reservasMap, filename);
+              }}
+              className="flex items-center gap-2 bg-[#004B87] hover:bg-blue-800 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm h-11"
+              title="Exportar para Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </button>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm h-11"
+              title="Imprimir Relatório"
+            >
+              <Printer className="w-4 h-4" /> Imprimir
+            </button>
           </div>
         </div>
       </div>
@@ -524,7 +526,14 @@ export default function AgendaSemanalPage() {
                             let infoTexto: React.ReactNode = ''
                             let subInfo: React.ReactNode = ''
                             
-                            if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
+                            if (reserva.isAdminReserva) {
+                              infoTexto = <>{(reserva.motivo?.toUpperCase() || 'RESERVA INTERNA')} <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded ml-1 font-bold">INTERNA</span></>
+                              subInfo = (
+                                <div className="flex flex-col gap-0.5 mt-1 leading-tight text-slate-500">
+                                  <span>{reserva.user?.name ? `Por: ${reserva.user.name}` : 'Ação Administrativa'}</span>
+                                </div>
+                              )
+                            } else if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
                               infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
                               subInfo = (
                                 <div className="flex flex-col gap-2 mt-1 leading-tight">
@@ -642,7 +651,14 @@ export default function AgendaSemanalPage() {
                             let infoTexto: React.ReactNode = ''
                             let subInfo: React.ReactNode = ''
                             
-                            if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
+                            if (reserva.isAdminReserva) {
+                              infoTexto = <>{(reserva.motivo?.toUpperCase() || 'RESERVA INTERNA')} <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded ml-1 font-bold">INTERNA</span></>
+                              subInfo = (
+                                <div className="flex flex-col gap-0.5 mt-1 leading-tight text-slate-500">
+                                  <span>{reserva.user?.name ? `Por: ${reserva.user.name}` : 'Ação Administrativa'}</span>
+                                </div>
+                              )
+                            } else if (reserva.time && reserva.time.responsaveis && reserva.time.responsaveis.length > 0) {
                               infoTexto = <>{reserva.time.nome.toUpperCase()} <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-1 font-bold">TIME</span></>
                               subInfo = (
                                 <div className="flex flex-col gap-2 mt-1 leading-tight">

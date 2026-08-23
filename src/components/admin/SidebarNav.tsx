@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarClock, Users, Map, Settings, ClipboardList } from "lucide-react";
+import { LayoutDashboard, CalendarClock, Users, Map, Settings, ClipboardList, ShieldAlert } from "lucide-react";
 
 const SoccerBallIcon = ({ className }: { className?: string }) => (
   <svg 

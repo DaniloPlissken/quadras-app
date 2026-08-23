@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { XCircle, Filter, Loader2, Download, Printer, Mail } from 'lucide-react'
+import { XCircle, Filter, Loader2, Download, Printer, Mail, CalendarClock } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -21,12 +21,14 @@ type Reserva = {
   slot: string
   status: string
   user: { id: string; name: string; email: string }
-  quadra: { nome: string; modalidade: { nome: string } }
+  quadra: { id: string; nome: string; modalidade: { nome: string } }
   time?: {
     nome: string
     responsaveis: { pessoa: { nome: string; telefone: string; cpf?: string } }[]
   }
   operador?: { name: string }
+  isAdminReserva?: boolean
+  motivo?: string
 }
 function highlightCpf(cpfFormatado: string, searchFilter: string) {
   if (!searchFilter) return cpfFormatado;
@@ -71,6 +73,15 @@ export default function AdminReservasPage() {
   const [reservaSelecionada, setReservaSelecionada] = useState<Reserva | null>(null)
   const [mensagemTexto, setMensagemTexto] = useState('')
   const [enviandoMsg, setEnviandoMsg] = useState(false)
+
+  // Modal Reagendamento
+  const [reagendarModalOpen, setReagendarModalOpen] = useState(false)
+  const [reservaParaReagendar, setReservaParaReagendar] = useState<Reserva | null>(null)
+  const [reagendarData, setReagendarData] = useState('')
+  const [reagendarSlot, setReagendarSlot] = useState('')
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([])
+  const [buscandoHorarios, setBuscandoHorarios] = useState(false)
+  const [reagendando, setReagendando] = useState(false)
 
   // Filtros
   const [filtroDataInicio, setFiltroDataInicio] = useState('')
@@ -214,6 +225,78 @@ export default function AdminReservasPage() {
     }
   }
 
+  // Buscar horários ao trocar a data de reagendamento
+  useEffect(() => {
+    async function buscarHorariosLivres() {
+      if (!reagendarData || !reservaParaReagendar) return
+      setBuscandoHorarios(true)
+      setHorariosDisponiveis([])
+      setReagendarSlot('')
+
+      try {
+        const resAgenda = await fetch(`/api/agenda?quadraId=${reservaParaReagendar.quadra.id}&dataInicio=${reagendarData}&dataFim=${reagendarData}`)
+        if (!resAgenda.ok) throw new Error()
+        const agendas = await resAgenda.json()
+        if (agendas.length === 0) {
+          toast.info('Não há agenda aberta para esta data.')
+          return
+        }
+
+        const resReservas = await fetch(`/api/reservas?quadraId=${reservaParaReagendar.quadra.id}&data=${reagendarData}`)
+        if (!resReservas.ok) throw new Error()
+        const reservasOcupadas = await resReservas.json()
+
+        const horariosAgenda: string[] = agendas[0].horarios
+        const horariosOcupados = reservasOcupadas
+          .filter((r: any) => r.id !== reservaParaReagendar.id)
+          .map((r: any) => r.slot)
+
+        const livres = horariosAgenda.filter(h => !horariosOcupados.includes(h))
+        setHorariosDisponiveis(livres)
+
+        if (livres.length === 0) {
+          toast.warning('Todos os horários desta data já estão ocupados.')
+        }
+      } catch (err) {
+        toast.error('Erro ao buscar horários disponíveis.')
+      } finally {
+        setBuscandoHorarios(false)
+      }
+    }
+    buscarHorariosLivres()
+  }, [reagendarData, reservaParaReagendar])
+
+  async function confirmarReagendamento() {
+    if (!reservaParaReagendar || !reagendarData || !reagendarSlot) return
+
+    setReagendando(true)
+    try {
+      const res = await fetch('/api/admin/reservas/reagendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservaId: reservaParaReagendar.id,
+          novaData: reagendarData,
+          novoSlot: reagendarSlot
+        })
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Erro ao reagendar')
+      }
+
+      toast.success('Reserva reagendada com sucesso!')
+      setReagendarModalOpen(false)
+      setReservaParaReagendar(null)
+      carregarReservasSilencioso()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setReagendando(false)
+    }
+  }
+
   // Exportação CSV com BOM para Excel (UTF-8)
   const exportarCSV = () => {
     const BOM = '\uFEFF'
@@ -296,7 +379,7 @@ export default function AdminReservasPage() {
 
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 no-print">
         <div>
-          <h1 className="hidden md:block text-3xl font-bold text-slate-800">Gestão de Reservas</h1>
+          <h1 className="text-3xl font-bold text-slate-800">Gestão de Reservas</h1>
           <p className="text-slate-500 mt-1 flex items-center gap-2">
             {reservas.length} reserva(s) encontrada(s)
             {(!filtroDataInicio && !filtroDataFim && reservas.length === 1000) && (
@@ -305,21 +388,6 @@ export default function AdminReservasPage() {
               </span>
             )}
           </p>
-        </div>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={exportarCSV}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm"
-          >
-            <Download className="w-4 h-4" /> CSV
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm"
-          >
-            <Printer className="w-4 h-4" /> Imprimir
-          </button>
         </div>
       </div>
 
@@ -418,6 +486,21 @@ export default function AdminReservasPage() {
             Limpar
           </button>
         )}
+
+        <div className="flex gap-3 ml-auto">
+          <button
+            onClick={exportarCSV}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm h-11"
+          >
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold transition-all shadow-sm h-11"
+          >
+            <Printer className="w-4 h-4" /> Imprimir
+          </button>
+        </div>
       </div>
 
       {/* Tabela de Relatório */}
@@ -455,12 +538,13 @@ export default function AdminReservasPage() {
             <div className="md:hidden flex flex-col divide-y divide-slate-100">
               {reservas.map((r) => {
                 const isTime = !!r.time
-                const tipoTexto = isTime ? 'Time' : 'Cidadão'
+                const isAdmin = !!r.isAdminReserva
+                const tipoTexto = isAdmin ? 'Reserva Interna' : (isTime ? 'Time' : 'Cidadão')
                 
                 const cpfFormatado = r.user?.id ? r.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
-                let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
-                let responsavelEmail = r.user?.email || 'Sem e-mail'
-                let responsavelCpf = cpfFormatado
+                let responsavelNome = isAdmin ? (r.motivo || 'Reserva Interna') : (r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A'))
+                let responsavelEmail = isAdmin ? (r.user?.nome ? `Criado por: ${r.user.nome}` : 'Ação Administrativa') : (r.user?.email || 'Sem e-mail')
+                let responsavelCpf = isAdmin ? '' : cpfFormatado
 
                 if (r.time && r.time.responsaveis.length > 0) {
                   responsavelNome = r.time.nome
@@ -470,7 +554,7 @@ export default function AdminReservasPage() {
                 }
 
                 return (
-                  <div key={r.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50/50 transition-colors">
+                  <div key={r.id} className={`p-4 flex flex-col gap-3 transition-colors border-l-4 ${isAdmin ? 'bg-orange-50/60 border-orange-500' : 'border-transparent hover:bg-slate-50/50 border-b border-b-slate-100'}`}>
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="font-bold text-slate-800 text-base">{r.quadra.nome}</div>
@@ -498,7 +582,7 @@ export default function AdminReservasPage() {
                     <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col gap-1 mt-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 text-sm truncate pr-2">{responsavelNome}</span>
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${isAdmin ? 'bg-orange-100 text-orange-800 border border-orange-200' : isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'}`}>
                           {tipoTexto}
                         </span>
                       </div>
@@ -509,7 +593,7 @@ export default function AdminReservasPage() {
                     </div>
                     
                     <div className="flex gap-2 justify-end mt-2">
-                      {r.user?.email && (
+                      {r.user?.email && !isAdmin && (
                         <button
                           onClick={() => {
                             setReservaSelecionada(r)
@@ -520,6 +604,22 @@ export default function AdminReservasPage() {
                         >
                           <Mail className="w-3.5 h-3.5" />
                           Mensagem
+                        </button>
+                      )}
+
+                      {r.status === 'CONFIRMADA' && !isAdmin && (
+                        <button
+                          onClick={() => {
+                            setReservaParaReagendar(r)
+                            setReagendarData('')
+                            setReagendarSlot('')
+                            setHorariosDisponiveis([])
+                            setReagendarModalOpen(true)
+                          }}
+                          className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-slate-200 hover:border-blue-200"
+                        >
+                          <CalendarClock className="w-3.5 h-3.5" />
+                          Reagendar
                         </button>
                       )}
 
@@ -561,12 +661,13 @@ export default function AdminReservasPage() {
                 <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
                   {reservas.map((r) => {
                     const isTime = !!r.time
-                    const tipoTexto = isTime ? 'Time' : 'Cidadão'
+                    const isAdmin = !!r.isAdminReserva
+                    const tipoTexto = isAdmin ? 'Reserva Admin' : (isTime ? 'Time' : 'Cidadão')
                     
                     const cpfFormatado = r.user?.id ? r.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
-                    let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
-                    let responsavelEmail = r.user?.email || 'Sem e-mail'
-                    let responsavelCpf = cpfFormatado
+                    let responsavelNome = isAdmin ? (r.motivo || 'Sem motivo') : (r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A'))
+                    let responsavelEmail = isAdmin ? 'Bloqueio administrativo' : (r.user?.email || 'Sem e-mail')
+                    let responsavelCpf = isAdmin ? '' : cpfFormatado
 
                     if (r.time && r.time.responsaveis.length > 0) {
                       responsavelNome = r.time.nome
@@ -576,7 +677,7 @@ export default function AdminReservasPage() {
                     }
 
                     return (
-                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={r.id} className={`transition-colors ${isAdmin ? 'bg-orange-50/60' : 'hover:bg-slate-50/50'}`}>
                       <td className="p-4 font-semibold whitespace-nowrap text-slate-800">
                         {formatDataCivilBR(r.data)}
                       </td>
@@ -590,7 +691,7 @@ export default function AdminReservasPage() {
                         <div className="text-xs text-slate-500 uppercase tracking-wide">{r.quadra.modalidade.nome}</div>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${isAdmin ? 'bg-orange-100 text-orange-800 border border-orange-200' : isTime ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
                           {tipoTexto}
                         </span>
                       </td>
@@ -613,18 +714,33 @@ export default function AdminReservasPage() {
                         </span>
                       </td>
                       <td className="p-4 text-right no-print flex justify-end gap-2">
-                        {r.user?.email && (
+                        {r.user?.email && !isAdmin && (
                           <button
                             onClick={() => {
                               setReservaSelecionada(r)
                               setMensagemTexto('')
                               setMensagemModalOpen(true)
                             }}
-                            className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-transparent hover:border-blue-200"
-                            title="Enviar E-mail"
+                            className="inline-flex items-center gap-1.5 text-[#004B87] hover:text-[#003666] hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-slate-200 hover:border-blue-200"
                           >
                             <Mail className="w-3.5 h-3.5" />
                             Mensagem
+                          </button>
+                        )}
+
+                        {r.status === 'CONFIRMADA' && !isAdmin && (
+                          <button
+                            onClick={() => {
+                              setReservaParaReagendar(r)
+                              setReagendarData('')
+                              setReagendarSlot('')
+                              setHorariosDisponiveis([])
+                              setReagendarModalOpen(true)
+                            }}
+                            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border border-slate-200 hover:border-blue-200"
+                          >
+                            <CalendarClock className="w-3.5 h-3.5" />
+                            Reagendar
                           </button>
                         )}
 
@@ -742,6 +858,71 @@ export default function AdminReservasPage() {
             >
               {cancelando === reservaParaCancelar?.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
               Confirmar Cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Reagendamento */}
+      <Dialog open={reagendarModalOpen} onOpenChange={setReagendarModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reagendar Reserva</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-slate-500">
+              Selecione a nova data e horário para a reserva. O cidadão receberá um e-mail informando a mudança.
+            </p>
+            
+            {reservaParaReagendar && (
+              <div className="bg-slate-50 p-3 rounded-lg text-xs font-mono text-slate-600 space-y-1">
+                <div><strong>Quadra:</strong> {reservaParaReagendar.quadra.nome}</div>
+                <div><strong>Atual:</strong> {formatDataCivilBR(reservaParaReagendar.data)} às {reservaParaReagendar.slot}</div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Nova Data</label>
+              <input
+                type="date"
+                value={reagendarData}
+                onChange={(e) => setReagendarData(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#004B87]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Novo Horário</label>
+              {buscandoHorarios ? (
+                <div className="flex items-center text-sm text-slate-500 gap-2 px-1">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Buscando horários...
+                </div>
+              ) : (
+                <Select value={reagendarSlot} onValueChange={setReagendarSlot} disabled={!reagendarData || horariosDisponiveis.length === 0}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={
+                      !reagendarData ? "Selecione a data primeiro" : 
+                      horariosDisponiveis.length === 0 ? "Sem horários livres" : "Selecione o horário"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {horariosDisponiveis.map(h => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReagendarModalOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={confirmarReagendamento} 
+              disabled={reagendando || !reagendarData || !reagendarSlot}
+              className="bg-[#004B87] hover:bg-[#003666]"
+            >
+              {reagendando ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarClock className="w-4 h-4 mr-2" />}
+              Confirmar Reagendamento
             </Button>
           </DialogFooter>
         </DialogContent>

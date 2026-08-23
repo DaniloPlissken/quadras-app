@@ -207,3 +207,55 @@ export async function enviarEmailCancelamentoAdmin(
     html: htmlContent,
   });
 }
+
+export async function enviarEmailReagendamento(
+  to: string,
+  nomeCidadao: string,
+  quadra: string,
+  dataAntiga: string,
+  horarioAntigo: string,
+  novaData: string,
+  novoHorario: string
+) {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; border: 1px solid #e0e0e0;">
+      ${getHeaderPrefeitura('RESERVA REAGENDADA')}
+      <div style="padding: 30px 20px;">
+        <p style="font-size: 16px;">Olá, <strong>${nomeCidadao}</strong>.</p>
+        
+        <div style="background-color: #f4f6f8; border-left: 5px solid #004B87; padding: 20px; margin: 25px 0;">
+          <p style="margin: 0 0 10px 0; color: #004B87; font-weight: bold; font-size: 16px;">Aviso de Reagendamento Administrativo</p>
+          <p style="margin: 0; color: #555; font-size: 15px; line-height: 1.5;">
+            Sua reserva para o local <strong>${quadra}</strong> foi reagendada pela equipe da FUTEL.
+          </p>
+        </div>
+
+        <h4 style="color: #004B87; margin: 25px 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalhes da Alteração</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+          <tr>
+            <td style="padding: 10px; background-color: #fff0f0; color: #842029; border: 1px solid #f5c2c7; width: 50%;">
+              <strong>De:</strong><br/>
+              Data: ${dataAntiga}<br/>
+              Horário: ${horarioAntigo}
+            </td>
+            <td style="padding: 10px; background-color: #f0fdf4; color: #0f5132; border: 1px solid #c3e6cb; width: 50%;">
+              <strong>Para:</strong><br/>
+              Data: ${novaData}<br/>
+              Horário: ${novoHorario}
+            </td>
+          </tr>
+        </table>
+        
+        <p style="margin-top: 30px; font-size: 15px; color: #555;">Este reagendamento foi realizado conforme solicitação ou necessidade administrativa. Em caso de dúvidas, entre em contato.</p>
+      </div>
+      ${getFooterPrefeitura()}
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"Quadras FUTEL" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to,
+    subject: `Reagendamento de Reserva - ${novaData} às ${novoHorario}`,
+    html: htmlContent,
+  });
+}

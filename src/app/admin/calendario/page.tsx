@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Plus, Trash2, CalendarPlus, Clock, Loader2, X, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, CalendarPlus, Clock, Loader2, X, ChevronDown, ShieldAlert } from 'lucide-react'
+import Link from 'next/link'
 
 type Quadra = {
   id: string
@@ -372,9 +373,11 @@ export default function AdminCalendarioPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-8">
-      <div>
-        <h1 className="hidden md:block text-3xl font-bold text-slate-800">Liberação de horários</h1>
-        <p className="text-slate-500 mt-1">Módulo oficial para administração da grade de horários e liberação de quadras públicas.</p>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Liberação de horários</h1>
+          <p className="text-slate-500 mt-1">Módulo oficial para administração da grade de horários e liberação de quadras públicas.</p>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 md:p-6 lg:p-8">
@@ -458,12 +461,22 @@ export default function AdminCalendarioPage() {
               <span className="truncate">Fechar Semana</span>
             </button>
 
-            <button
-              onClick={() => setModalConfig({ isOpen: true })}
-              className="flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-colors shadow-sm w-full sm:w-auto sm:ml-auto"
-            >
-              Ajustes Manuais
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto sm:ml-auto">
+              <button
+                onClick={() => setModalConfig({ isOpen: true })}
+                className="flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-colors shadow-sm w-full sm:w-auto"
+              >
+                Ajustes Manuais
+              </button>
+              
+              <Link 
+                href="/admin/reservas/nova-interna"
+                className="flex justify-center items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-sm w-full sm:w-auto"
+              >
+                <ShieldAlert className="w-5 h-5" />
+                Nova Reserva Interna
+              </Link>
+            </div>
           </div>
         </div>
       </div>

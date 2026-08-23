@@ -83,6 +83,8 @@ model Reserva {
   status      ReservaStatus @default(CONFIRMADA)
   emailStatus String        @default("PENDENTE")
   cancelToken String        @default("")
+  isAdminReserva Boolean    @default(false)
+  motivo      String?
   quadra      Quadra        @relation(fields: [quadraId], references: [id])
   user        User?         @relation("ReservaUser", fields: [userId], references: [id])
   operador    User?         @relation("ReservaOperador", fields: [operadorId], references: [id])
