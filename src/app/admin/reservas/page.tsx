@@ -20,13 +20,35 @@ type Reserva = {
   data: string
   slot: string
   status: string
-  user: { name: string; email: string }
+  user: { id: string; name: string; email: string }
   quadra: { nome: string; modalidade: { nome: string } }
   time?: {
     nome: string
-    responsaveis: { pessoa: { nome: string; telefone: string } }[]
+    responsaveis: { pessoa: { nome: string; telefone: string; cpf?: string } }[]
   }
   operador?: { name: string }
+}
+function highlightCpf(cpfFormatado: string, searchFilter: string) {
+  if (!searchFilter) return cpfFormatado;
+  const searchDigits = searchFilter.replace(/\D/g, '');
+  if (!searchDigits) return cpfFormatado;
+
+  let matchCount = 0;
+  const elements = [];
+
+  for (let i = 0; i < cpfFormatado.length; i++) {
+    const char = cpfFormatado[i];
+    const isDigit = /\d/.test(char);
+    
+    if (matchCount < searchDigits.length) {
+      elements.push(<strong key={i} className="font-black text-slate-900 bg-yellow-200/50 rounded-sm">{char}</strong>);
+      if (isDigit) matchCount++;
+    } else {
+      elements.push(<span key={i}>{char}</span>);
+    }
+  }
+
+  return <>{elements}</>;
 }
 
 export default function AdminReservasPage() {
@@ -56,6 +78,7 @@ export default function AdminReservasPage() {
   const [filtroModalidade, setFiltroModalidade] = useState('todas')
   const [filtroQuadra, setFiltroQuadra] = useState('todas')
   const [filtroStatus, setFiltroStatus] = useState('todas')
+  const [filtroCpf, setFiltroCpf] = useState('')
 
   const [quadras, setQuadras] = useState<Quadra[]>([])
   const [modalidades, setModalidades] = useState<string[]>([])
@@ -86,6 +109,7 @@ export default function AdminReservasPage() {
       if (filtroModalidade !== 'todas') params.set('modalidade', filtroModalidade)
       if (filtroQuadra !== 'todas') params.set('quadraId', filtroQuadra)
       if (filtroStatus !== 'todas') params.set('status', filtroStatus)
+      if (filtroCpf) params.set('cpf', filtroCpf)
 
       try {
         const res = await fetch(`/api/admin/reservas?${params.toString()}`, { signal })
@@ -105,7 +129,7 @@ export default function AdminReservasPage() {
     carregar()
     
     return () => { controller.abort() }
-  }, [filtroDataInicio, filtroDataFim, filtroModalidade, filtroQuadra, filtroStatus])
+  }, [filtroDataInicio, filtroDataFim, filtroModalidade, filtroQuadra, filtroStatus, filtroCpf])
 
   async function carregarReservasSilencioso() {
     setIsFetching(true)
@@ -115,6 +139,7 @@ export default function AdminReservasPage() {
     if (filtroModalidade !== 'todas') params.set('modalidade', filtroModalidade)
     if (filtroQuadra !== 'todas') params.set('quadraId', filtroQuadra)
     if (filtroStatus !== 'todas') params.set('status', filtroStatus)
+    if (filtroCpf) params.set('cpf', filtroCpf)
 
     try {
       const res = await fetch(`/api/admin/reservas?${params.toString()}`)
@@ -199,13 +224,19 @@ export default function AdminReservasPage() {
       const isTime = !!r.time
       const tipo = isTime ? 'Time' : 'Cidadão'
       
+      const cpfFormatado = r.user?.id ? r.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
       let responsavel = r.user?.name || (r.operador ? `Operador: ${r.operador.name}` : 'N/A')
       let contato = r.user?.email || 'Sem e-mail'
+      let cpfExport = cpfFormatado
 
       if (r.time && r.time.responsaveis.length > 0) {
         responsavel = r.time.responsaveis[0].pessoa.nome
         contato = `Time: ${r.time.nome} | Tel: ${r.time.responsaveis[0].pessoa.telefone || ''}`
+        const timeCpf = r.time.responsaveis[0].pessoa.cpf
+        cpfExport = timeCpf ? timeCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
       }
+      
+      const infoContatoECpf = `${contato}${cpfExport ? ` | CPF: ${cpfExport}` : ''}`
 
       return [
         data,
@@ -215,7 +246,7 @@ export default function AdminReservasPage() {
         r.status,
         tipo,
         responsavel,
-        contato
+        infoContatoECpf
       ].map(campo => `"${String(campo).replace(/"/g, '""')}"`).join(';')
     })
 
@@ -235,6 +266,7 @@ export default function AdminReservasPage() {
     setFiltroModalidade('todas')
     setFiltroQuadra('todas')
     setFiltroStatus('todas')
+    setFiltroCpf('')
   }
 
   const quadrasFiltradas = useMemo(() => {
@@ -293,13 +325,17 @@ export default function AdminReservasPage() {
 
       {/* Filtros */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-wrap gap-4 items-end no-print">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 mb-2 w-full md:w-auto md:mb-0">
-          <Filter className="w-4 h-4" />
-          Filtros:
+        
+        <div className="w-full md:w-auto flex flex-col justify-end">
+          <label className="text-xs font-bold uppercase tracking-wider block mb-1 opacity-0 hidden md:block">&nbsp;</label>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 h-[42px]">
+            <Filter className="w-4 h-4" />
+            Filtros:
+          </div>
         </div>
         
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Data Início</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 ml-1">Data Início</label>
           <input
             type="date"
             value={filtroDataInicio}
@@ -309,7 +345,7 @@ export default function AdminReservasPage() {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Data Fim</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 ml-1">Data Fim</label>
           <input
             type="date"
             value={filtroDataFim}
@@ -319,7 +355,7 @@ export default function AdminReservasPage() {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Modalidade</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 ml-1">Modalidade</label>
           <select
             value={filtroModalidade}
             onChange={(e) => {
@@ -336,7 +372,7 @@ export default function AdminReservasPage() {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Quadra</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 ml-1">Quadra</label>
           <select
             value={filtroQuadra}
             onChange={(e) => setFiltroQuadra(e.target.value)}
@@ -350,7 +386,7 @@ export default function AdminReservasPage() {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Status</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 ml-1">Status</label>
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
@@ -363,7 +399,18 @@ export default function AdminReservasPage() {
           </select>
         </div>
 
-        {(filtroDataInicio || filtroDataFim || filtroModalidade !== 'todas' || filtroQuadra !== 'todas' || filtroStatus !== 'todas') && (
+        <div>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 ml-1">CPF Responsável</label>
+          <input
+            type="text"
+            placeholder="000.000.000-00"
+            value={filtroCpf}
+            onChange={(e) => setFiltroCpf(e.target.value)}
+            className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#004B87] min-w-[140px]"
+          />
+        </div>
+
+        {(filtroDataInicio || filtroDataFim || filtroModalidade !== 'todas' || filtroQuadra !== 'todas' || filtroStatus !== 'todas' || filtroCpf) && (
           <button
             onClick={limparFiltros}
             className="text-sm text-slate-500 hover:text-slate-700 underline px-2 py-2"
@@ -410,12 +457,16 @@ export default function AdminReservasPage() {
                 const isTime = !!r.time
                 const tipoTexto = isTime ? 'Time' : 'Cidadão'
                 
+                const cpfFormatado = r.user?.id ? r.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
                 let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
-                let responsavelSub = r.user?.email || 'Sem e-mail'
+                let responsavelEmail = r.user?.email || 'Sem e-mail'
+                let responsavelCpf = cpfFormatado
 
                 if (r.time && r.time.responsaveis.length > 0) {
                   responsavelNome = r.time.nome
-                  responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
+                  responsavelEmail = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
+                  const timeCpf = r.time.responsaveis[0].pessoa.cpf
+                  responsavelCpf = timeCpf ? timeCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
                 }
 
                 return (
@@ -451,7 +502,10 @@ export default function AdminReservasPage() {
                           {tipoTexto}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500 truncate" title={responsavelSub}>{responsavelSub}</span>
+                      <span className="text-xs text-slate-500 truncate" title={responsavelEmail}>{responsavelEmail}</span>
+                      {responsavelCpf && (
+                        <span className="text-xs font-mono text-slate-500 truncate mt-0.5" title={responsavelCpf}>CPF: {highlightCpf(responsavelCpf, filtroCpf)}</span>
+                      )}
                     </div>
                     
                     <div className="flex gap-2 justify-end mt-2">
@@ -509,12 +563,16 @@ export default function AdminReservasPage() {
                     const isTime = !!r.time
                     const tipoTexto = isTime ? 'Time' : 'Cidadão'
                     
+                    const cpfFormatado = r.user?.id ? r.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
                     let responsavelNome = r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A')
-                    let responsavelSub = r.user?.email || 'Sem e-mail'
+                    let responsavelEmail = r.user?.email || 'Sem e-mail'
+                    let responsavelCpf = cpfFormatado
 
                     if (r.time && r.time.responsaveis.length > 0) {
                       responsavelNome = r.time.nome
-                      responsavelSub = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
+                      responsavelEmail = `Resp: ${r.time.responsaveis[0].pessoa.nome}`
+                      const timeCpf = r.time.responsaveis[0].pessoa.cpf
+                      responsavelCpf = timeCpf ? timeCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
                     }
 
                     return (
@@ -538,7 +596,10 @@ export default function AdminReservasPage() {
                       </td>
                       <td className="p-4">
                         <div className="font-bold text-slate-800">{responsavelNome}</div>
-                        <div className="text-xs text-slate-500 truncate max-w-[200px]" title={responsavelSub}>{responsavelSub}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[200px]" title={responsavelEmail}>{responsavelEmail}</div>
+                        {responsavelCpf && (
+                          <div className="text-xs font-mono text-slate-500 mt-0.5">CPF: {highlightCpf(responsavelCpf, filtroCpf)}</div>
+                        )}
                       </td>
                       <td className="p-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${

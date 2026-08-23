@@ -24,6 +24,7 @@ export async function GET(request: Request) {
   const quadraIdFiltro = searchParams.get('quadraId')
   const modalidadeFiltro = searchParams.get('modalidade')
   const statusFiltro = searchParams.get('status')
+  const cpfFiltro = searchParams.get('cpf')
 
   const where: Prisma.ReservaWhereInput = {}
 
@@ -59,12 +60,19 @@ export async function GET(request: Request) {
     } as Prisma.QuadraWhereInput
   }
 
-  const takeLimit = (!dataInicioStr && !dataFimStr) ? 1000 : undefined;
+  if (cpfFiltro) {
+    const cpfNumeros = cpfFiltro.replace(/\D/g, '')
+    if (cpfNumeros) {
+      where.userId = { startsWith: cpfNumeros }
+    }
+  }
+
+  const takeLimit = (!dataInicioStr && !dataFimStr && !cpfFiltro) ? 1000 : undefined;
 
   const reservas = await prisma.reserva.findMany({
     where,
     include: {
-      user: { select: { name: true, email: true } }, // Sem 'id' para proteger CPF
+      user: { select: { id: true, name: true, email: true } }, // 'id' incluído para exibir CPF na tela de admin
       quadra: { include: { modalidade: true } },
       time: { include: { responsaveis: { include: { pessoa: true } } } },
       operador: { select: { name: true } }
