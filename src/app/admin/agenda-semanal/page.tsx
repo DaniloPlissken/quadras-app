@@ -41,6 +41,8 @@ type Reserva = {
   quadraId: string
   user: { id: string; name: string; email: string; telefone?: string }
   time?: Time
+  isAdminReserva?: boolean
+  motivo?: string | null
 }
 
 // Utilitários de data

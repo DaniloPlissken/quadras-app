@@ -543,7 +543,7 @@ export default function AdminReservasPage() {
                 
                 const cpfFormatado = r.user?.id ? r.user.id.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : ''
                 let responsavelNome = isAdmin ? (r.motivo || 'Reserva Interna') : (r.user?.name || (r.operador ? `Op: ${r.operador.name}` : 'N/A'))
-                let responsavelEmail = isAdmin ? (r.user?.nome ? `Criado por: ${r.user.nome}` : 'Ação Administrativa') : (r.user?.email || 'Sem e-mail')
+                let responsavelEmail = isAdmin ? (r.user?.name ? `Criado por: ${r.user.name}` : 'Ação Administrativa') : (r.user?.email || 'Sem e-mail')
                 let responsavelCpf = isAdmin ? '' : cpfFormatado
 
                 if (r.time && r.time.responsaveis.length > 0) {
