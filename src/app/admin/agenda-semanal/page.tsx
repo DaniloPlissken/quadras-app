@@ -39,8 +39,10 @@ type Reserva = {
   slot: string
   status: string
   quadraId: string
-  user: { id: string; name: string; email: string; telefone?: string }
+  user?: { id: string; name: string; email: string; telefone?: string }
   time?: Time
+  isAdminReserva?: boolean
+  motivo?: string
 }
 
 // Utilitários de data
