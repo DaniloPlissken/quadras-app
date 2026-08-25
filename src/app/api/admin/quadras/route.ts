@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -66,7 +67,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const dataToUpdate: any = { nome, modalidadeId }
+    const dataToUpdate: Prisma.QuadraUncheckedUpdateInput = { nome, modalidadeId }
     if (ativa !== undefined) {
       dataToUpdate.ativa = ativa
     }
@@ -121,7 +122,7 @@ export async function DELETE(request: Request) {
     await prisma.quadra.delete({ where: { id } })
 
     return NextResponse.json({ ok: true })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro ao remover quadra:', error)
     return NextResponse.json(
       { error: 'Erro ao remover quadra' },

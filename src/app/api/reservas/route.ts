@@ -1,5 +1,8 @@
+
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 /**
  * Cria uma Date UTC midnight a partir de "YYYY-MM-DD", evitando deslocamento de timezone.
@@ -50,6 +53,9 @@ export async function GET(req: Request) {
   const fimDoDia = new Date(dataConsulta)
   fimDoDia.setUTCHours(23, 59, 59, 999)
 
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.id
+
   const reservas = await prisma.reserva.findMany({
     where: {
       quadraId,
@@ -59,18 +65,43 @@ export async function GET(req: Request) {
       },
       status: { not: 'CANCELADA_ADMIN' },
     },
+    select: {
+      id: true,
+      data: true,
+      slot: true,
+      status: true,
+      quadraId: true,
+      userId: true, // we select it here to check it, but will omit it below if not the user
+    }
   })
 
-  return NextResponse.json(reservas)
+  // Não expor CPF (userId) publicamente, apenas para o próprio dono da reserva
+  const reservasTratadas = reservas.map(reserva => ({
+    ...reserva,
+    userId: reserva.userId === userId ? userId : undefined
+  }))
+
+  return NextResponse.json(reservasTratadas)
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const { quadraId, userId, data, slot } = body
+    const session = await getServerSession(authOptions)
 
-    if (!quadraId || !userId || !data || !slot) {
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Usuário não autenticado.' },
+        { status: 401 }
+      )
+    }
+
+    const userId = session.user.id
+
+    const { quadraId, data, slot } = body
+
+    if (!quadraId || !data || !slot) {
       return NextResponse.json(
         { error: 'Dados incompletos' },
         { status: 400 }
@@ -78,6 +109,19 @@ export async function POST(req: Request) {
     }
 
     const dataReserva = parseDataUTC(data)
+
+    // Validar: não permitir datas passadas
+    const agora = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
+    const dataAtualStr = formatter.format(agora)
+    const hojeUTC = parseDataUTC(dataAtualStr)
+
+    if (dataReserva < hojeUTC) {
+      return NextResponse.json(
+        { error: 'Não é possível realizar reservas em datas passadas.' },
+        { status: 400 }
+      )
+    }
 
     // Validar: existe Agenda para esta data + quadra?
     const agenda = await prisma.agenda.findUnique({
@@ -155,21 +199,12 @@ export async function POST(req: Request) {
       )
     }
 
-    // Se a modalidade for Futebol, o usuário (CPF) precisa ser um responsável apto
+    // Se a modalidade for Futebol, bloqueia o agendamento pelo cidadão
     if (quadra.modalidade.nome.toLowerCase() === 'futebol') {
-      const responsavelApto = await prisma.responsavelTime.findFirst({
-        where: {
-          cpf: userId,
-          apto: true
-        }
-      })
-
-      if (!responsavelApto) {
-        return NextResponse.json(
-          { error: 'Apenas responsáveis aptos de times validados podem reservar campos de futebol.' },
-          { status: 403 }
-        )
-      }
+      return NextResponse.json(
+        { error: 'Reservas de futebol são realizadas exclusivamente pela administração da FUTEL.' },
+        { status: 403 }
+      )
     }
 
     const reserva = await prisma.reserva.create({
@@ -179,9 +214,44 @@ export async function POST(req: Request) {
         data: dataReserva,
         slot,
       },
+      include: {
+        user: true,
+      }
     })
 
-    return NextResponse.json(reserva, { status: 201 })
+    const { emailConfirmacao } = body;
+    let emailStatus = 'PENDENTE';
+    
+    // Tenta enviar o e-mail logo após criar a reserva
+    if (emailConfirmacao) {
+      try {
+        const { enviarEmailConfirmacao } = await import('@/lib/mail');
+        
+        // Formatar a data para o email (DD/MM/YYYY)
+        const formatShort = (d: Date) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+        
+        await enviarEmailConfirmacao(
+          emailConfirmacao,
+          reserva.user?.name || 'Cidadão',
+          quadra.nome,
+          formatShort(dataReserva),
+          slot
+        );
+        
+        emailStatus = 'ENVIADO';
+      } catch (err) {
+        console.error('Falha ao enviar e-mail:', err);
+        emailStatus = 'FALHOU';
+      }
+      
+      // Atualiza o status do email na reserva recém-criada
+      await prisma.reserva.update({
+        where: { id: reserva.id },
+        data: { emailStatus }
+      });
+    }
+
+    return NextResponse.json({ ...reserva, emailStatus }, { status: 201 })
   } catch (error) {
     console.error(error)
 

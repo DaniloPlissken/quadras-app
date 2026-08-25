@@ -5,11 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Shield } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,63 +43,65 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-[80vh] flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md border-t-4 border-t-[#004B87] shadow-lg">
-        <CardHeader className="space-y-2 text-center pb-6">
-          <div className="flex justify-center mb-2">
-            <div className="w-12 h-12 rounded-full bg-[#004B87]/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-[#004B87]" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-slate-800">Acesso Restrito</CardTitle>
-          <CardDescription>
-            Portal de Serviços - FUTEL Uberlândia
-          </CardDescription>
-        </CardHeader>
+    <main className="min-h-screen flex items-center justify-center bg-slate-100 relative">
+      {/* Card Central */}
+      <div className="relative w-full max-w-[500px] bg-white pt-16 pb-10 px-8 sm:px-12 shadow-xl mx-4 mt-16 border border-slate-200">
+        {/* Header Azul sobreposto */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-[90%] bg-[#005191] py-4 shadow-lg rounded-sm">
+          <h2 className="text-center text-white text-xl sm:text-2xl font-bold">Entrar</h2>
+        </div>
         
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cpf">CPF</Label>
-              <Input 
-                id="cpf" 
-                placeholder="000.000.000-00" 
-                value={cpf}
-                onChange={(e) => setCpf(handleMascaraCPF(e.target.value))}
-                required 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-              />
-            </div>
+        <form onSubmit={handleLogin} className="mt-4 space-y-10">
+          <div className="space-y-1">
+            <input 
+              id="cpf" 
+              type="text"
+              placeholder="CPF (somente números)" 
+              inputMode="numeric"
+              value={cpf}
+              onChange={(e) => setCpf(handleMascaraCPF(e.target.value))}
+              required 
+              className="w-full bg-transparent border-0 border-b border-[#005191] text-center text-[#6b8eaa] text-lg font-medium pb-2 focus:ring-0 focus:outline-none focus:border-b-2 placeholder:text-[#6b8eaa]"
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <input 
+              id="password" 
+              type="password" 
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+              className="w-full bg-transparent border-0 border-b border-[#005191] text-center text-[#6b8eaa] text-lg font-medium pb-2 focus:ring-0 focus:outline-none focus:border-b-2 placeholder:text-[#6b8eaa]"
+            />
+          </div>
 
+          <div className="flex justify-center -mt-2">
+            <Link href="/esqueci-senha" className="text-sm text-[#6b8eaa] hover:text-[#005191] hover:underline transition-colors font-medium">
+              Esqueci a Senha
+            </Link>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 gap-4">
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/cadastro')}
+              className="w-1/2 border-gray-400 text-[#005191] font-bold h-12 rounded-sm hover:bg-slate-50 transition-colors"
+            >
+              CADASTRAR
+            </Button>
             <Button 
               type="submit" 
-              className="w-full bg-[#009A44] hover:bg-[#007f38] text-white transition-colors h-11 text-base font-bold"
+              className="w-1/2 bg-[#005191] hover:bg-[#003d6e] text-white font-bold h-12 rounded-sm transition-colors"
               disabled={loading}
             >
-              {loading ? 'Acessando...' : 'Entrar'}
+              {loading ? 'Acessando...' : 'ENTRAR'}
             </Button>
-          </form>
-        </CardContent>
-
-        <CardFooter className="flex flex-col space-y-4 text-center text-sm text-slate-600 border-t pt-6">
-          <p>
-            Ainda não tem cadastro?{' '}
-            <Link href="/cadastro" className="text-[#004B87] font-semibold hover:underline">
-              Criar conta
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }

@@ -51,7 +51,7 @@ export default function ModalidadeQuadrasPage() {
       ])
       if (resQ.ok) setQuadras(await resQ.json())
       if (resM.ok) setModalidades(await resM.json())
-    } catch (e) {
+    } catch {
       toast.error('Erro ao carregar dados')
     } finally {
       setLoading(false)
@@ -59,8 +59,29 @@ export default function ModalidadeQuadrasPage() {
   }
 
   useEffect(() => {
-    if (modalidadeId) carregarDados()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!modalidadeId) return
+    let ignore = false
+    async function carregar() {
+      setLoading(true)
+      try {
+        const [resQ, resM] = await Promise.all([
+          fetch('/api/admin/quadras'),
+          fetch('/api/admin/modalidades'),
+        ])
+        if (!ignore) {
+          if (resQ.ok) setQuadras(await resQ.json())
+          if (resM.ok) setModalidades(await resM.json())
+        }
+      } catch {
+        if (!ignore) toast.error('Erro ao carregar dados')
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
   }, [modalidadeId])
 
   function abrirModal(quadra: Quadra) {

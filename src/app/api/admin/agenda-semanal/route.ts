@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 function parseDataUTC(data: string) {
   const [ano, mes, dia] = data.split('-').map(Number)
@@ -40,32 +41,35 @@ export async function GET(req: Request) {
 
   const { inicio, fim } = getSemanaRange(dataBase)
 
-  const whereClause: any = {
+  const agendaWhere: Prisma.AgendaWhereInput = {
     data: {
       gte: inicio,
       lte: fim
-    }
-  }
-
-  if (quadraId) {
-    whereClause.quadraId = quadraId
+    },
+    ...(quadraId ? { quadraId } : {})
   }
 
   const agendas = await prisma.agenda.findMany({
-    where: whereClause,
+    where: agendaWhere,
     orderBy: { data: 'asc' }
   })
 
-  const reservas = await prisma.reserva.findMany({
-    where: {
-      ...whereClause,
-      status: { not: 'CANCELADA_ADMIN' }
+  const reservaWhere: Prisma.ReservaWhereInput = {
+    data: {
+      gte: inicio,
+      lte: fim
     },
+    ...(quadraId ? { quadraId } : {}),
+    status: { not: 'CANCELADA_ADMIN' }
+  }
+
+  const reservas = await prisma.reserva.findMany({
+    where: reservaWhere,
     include: {
-      user: { select: { id: true, name: true, email: true } },
+      user: { select: { id: true, name: true, email: true, telefone: true } },
       time: {
         include: {
-          responsaveis: true
+          responsaveis: { include: { pessoa: true } }
         }
       }
     }
@@ -130,7 +134,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, horariosBloqueados })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro ao bloquear semana:', error)
     return NextResponse.json({ error: 'Erro ao processar bloqueio' }, { status: 500 })
   }

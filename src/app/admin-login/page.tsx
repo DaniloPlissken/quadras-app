@@ -4,11 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { LockKeyhole } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -37,57 +33,75 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#004B87] p-4">
-      <Card className="w-full max-w-md border-none shadow-2xl">
-        <CardHeader className="space-y-2 text-center pb-6">
-          <div className="flex justify-center mb-2">
-            <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
-              <LockKeyhole className="w-7 h-7 text-[#004B87]" />
-            </div>
+    <main className="min-h-screen flex items-center justify-center bg-slate-100 relative">
+      {/* Logos no topo (Admin não tem header global) */}
+      <div className="absolute top-0 w-full p-6 flex justify-between items-start z-10">
+        <div className="flex gap-6 items-center">
+          <div className="flex flex-col shrink-0 z-10 w-fit text-left">
+            <span className="text-[28px] md:text-[34px] font-black text-[#009A44] leading-none">FUTEL</span>
+            <span className="text-[9px] md:text-[11px] font-medium text-[#004B87] leading-[1.2] uppercase mt-0.5">
+              FUNDAÇÃO UBERLANDENSE<br />DO TURISMO, ESPORTE E LAZER
+            </span>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-800">Administração FUTEL</CardTitle>
-          <CardDescription>
-            Acesso exclusivo para servidores
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-700">E-mail Institucional</Label>
-              <Input 
-                id="email" 
-                type="email"
-                placeholder="admin@futel.mg.gov.br" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-                className="bg-slate-50 h-11"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-700">Senha</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-                className="bg-slate-50 h-11"
-              />
-            </div>
+        </div>
+        <div className="w-48 sm:w-64">
+          <img 
+            src="/logo-prefeitura-hd.png" 
+            alt="Prefeitura de Uberlândia" 
+            className="w-full h-auto object-contain"
+          />
+        </div>
+      </div>
 
+      {/* Card Central */}
+      <div className="relative w-full max-w-[500px] bg-white pt-16 pb-10 px-8 sm:px-12 shadow-xl mx-4 mt-16 border border-slate-200">
+        {/* Header Azul sobreposto */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-[90%] bg-[#005191] py-4 shadow-lg rounded-sm">
+          <h2 className="text-center text-white text-xl sm:text-2xl font-bold">Painel Administrativo</h2>
+        </div>
+        
+        <form onSubmit={handleLogin} className="mt-4 space-y-10">
+          <div className="space-y-1">
+            <input 
+              id="email" 
+              type="email"
+              placeholder="E-mail Institucional" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+              className="w-full bg-transparent border-0 border-b border-[#005191] text-center text-[#6b8eaa] text-lg font-medium pb-2 focus:ring-0 focus:outline-none focus:border-b-2 placeholder:text-[#6b8eaa]"
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <input 
+              id="password" 
+              type="password" 
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+              className="w-full bg-transparent border-0 border-b border-[#005191] text-center text-[#6b8eaa] text-lg font-medium pb-2 focus:ring-0 focus:outline-none focus:border-b-2 placeholder:text-[#6b8eaa]"
+            />
+          </div>
+
+          <div className="flex justify-center -mt-2">
+            <button type="button" className="text-sm text-[#6b8eaa] hover:text-[#005191] hover:underline transition-colors font-medium">
+              Esqueci a Senha
+            </button>
+          </div>
+
+          <div className="flex justify-center pt-4">
             <Button 
               type="submit" 
-              className="w-full bg-[#009A44] hover:bg-[#007f38] text-white transition-colors h-12 text-base font-bold shadow-md"
+              className="w-full bg-[#005191] hover:bg-[#003d6e] text-white font-bold h-12 rounded-sm transition-colors"
               disabled={loading}
             >
-              {loading ? 'Autenticando...' : 'Acessar Painel'}
+              {loading ? 'Autenticando...' : 'ENTRAR'}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }

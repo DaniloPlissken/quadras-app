@@ -22,14 +22,23 @@ function validarCPF(cpf: string) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { name, email, cpf, password } = data;
+    const { name, email, cpf, telefone, password } = data;
 
-    // Remove formatação do CPF
+    // Remove formatação do CPF e Telefone
     const cpfLimpo = cpf.replace(/\D/g, '');
+    const telefoneLimpo = telefone?.replace(/\D/g, '') || '';
 
     // Validação básica
-    if (!name || !email || !cpfLimpo || !password) {
+    if (!name || !email || !cpfLimpo || !telefoneLimpo || !password) {
       return NextResponse.json({ error: 'Preencha todos os campos obrigatórios' }, { status: 400 });
+    }
+
+    if (password.trim().length === 0) {
+      return NextResponse.json({ error: 'A senha não pode ser vazia ou composta apenas por espaços.' }, { status: 400 });
+    }
+
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+      return NextResponse.json({ error: 'A senha excedeu o limite máximo seguro de 72 bytes.' }, { status: 400 });
     }
 
     // Validação matemática do CPF
@@ -63,6 +72,7 @@ export async function POST(request: Request) {
         id: cpfLimpo,
         name,
         email,
+        telefone: telefoneLimpo,
         password: hashedPassword,
       }
     });

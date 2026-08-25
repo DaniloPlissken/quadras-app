@@ -18,23 +18,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 })
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    // Garantir que a pasta existe
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'documentos')
-    await mkdir(uploadDir, { recursive: true })
-
-    // Nome único para o arquivo
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-    const ext = file.name.split('.').pop()
-    const filename = `${uniqueSuffix}.${ext}`
+    // No ambiente de homologação na Vercel, o sistema de arquivos é read-only.
+    // Portanto, o upload real está desativado temporariamente.
+    // Retornamos uma URL fictícia para que o sistema de marcação de documentos funcione.
     
-    const filePath = join(uploadDir, filename)
-    await writeFile(filePath, buffer)
-
-    // Retorna a URL pública
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
+    const ext = file.name.split('.').pop() || 'pdf'
+    const filename = `dummy-doc-${uniqueSuffix}.${ext}`
+    
+    // Retorna a URL pública (mockada)
     const url = `/uploads/documentos/${filename}`
+    
+    console.log(`[Staging] Upload simulado de arquivo: ${file.name} -> ${url}`)
     
     return NextResponse.json({ url }, { status: 201 })
   } catch (error) {

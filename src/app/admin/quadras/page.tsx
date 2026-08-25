@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Trash2, Loader2, ArrowRight } from 'lucide-react'
+import { Plus, Loader2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 type Modalidade = {
@@ -49,25 +49,34 @@ export default function AdminQuadrasPage() {
       fetch('/api/admin/quadras'),
       fetch('/api/admin/modalidades'),
     ])
-    let quadrasCarregadas: Quadra[] = []
-    let modsCarregadas: Modalidade[] = []
-
-    if (resQ.ok) {
-      quadrasCarregadas = await resQ.json()
-      setQuadras(quadrasCarregadas)
-    }
+    if (resQ.ok) setQuadras(await resQ.json())
     if (resM.ok) {
-      modsCarregadas = await resM.json()
-      setModalidades(modsCarregadas)
-      if (modsCarregadas.length > 0 && !modalidadeId) {
-        setModalidadeId(modsCarregadas[0].id)
-      }
+      const mods = await resM.json()
+      setModalidades(mods)
+      setModalidadeId(prev => prev || (mods.length > 0 ? mods[0].id : ''))
     }
   }
 
   useEffect(() => {
-    carregarDados()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    let ignore = false
+    async function carregar() {
+      const [resQ, resM] = await Promise.all([
+        fetch('/api/admin/quadras'),
+        fetch('/api/admin/modalidades'),
+      ])
+      if (!ignore) {
+        if (resQ.ok) setQuadras(await resQ.json())
+        if (resM.ok) {
+          const mods = await resM.json()
+          setModalidades(mods)
+          setModalidadeId(prev => prev || (mods.length > 0 ? mods[0].id : ''))
+        }
+      }
+    }
+    carregar()
+    return () => {
+      ignore = true
+    }
   }, [])
 
   async function criarQuadra(e: React.FormEvent) {
@@ -93,24 +102,12 @@ export default function AdminQuadrasPage() {
     }
   }
 
-  async function excluirQuadra(id: string, nomeQuadra: string) {
-    if (!confirm(`Tem certeza que deseja excluir "${nomeQuadra}"?`)) return
-
-    const res = await fetch(`/api/admin/quadras?id=${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      toast.success('Quadra excluída!')
-      carregarDados()
-    } else {
-      const err = await res.json()
-      toast.error(err.error || 'Erro ao excluir.')
-    }
-  }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Gestão de Quadras</h1>
+          <h1 className="hidden md:block text-3xl font-bold text-slate-800">Gestão de Quadras</h1>
           <p className="text-slate-500 mt-1">{quadras.length} quadra(s) cadastrada(s)</p>
         </div>
         <button
@@ -120,7 +117,7 @@ export default function AdminQuadrasPage() {
             }
             setShowForm(!showForm)
           }}
-          className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95"
+          className="bg-[#009A44] hover:bg-[#008A3D] text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap self-start md:self-auto"
         >
           <Plus className="w-5 h-5" /> Nova Quadra / Campo
         </button>

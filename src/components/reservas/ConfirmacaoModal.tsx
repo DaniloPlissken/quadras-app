@@ -9,6 +9,7 @@ interface ConfirmacaoModalProps {
   data: string;
   horario: string;
   emailPadrao: string;
+  isSubmitting?: boolean;
 }
 
 export function ConfirmacaoModal({
@@ -18,7 +19,8 @@ export function ConfirmacaoModal({
   quadraNome,
   data,
   horario,
-  emailPadrao
+  emailPadrao,
+  isSubmitting
 }: ConfirmacaoModalProps) {
   const [emailConfirmacao, setEmailConfirmacao] = useState(emailPadrao);
 
@@ -86,15 +88,24 @@ export function ConfirmacaoModal({
         <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
           <button 
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg text-slate-600 font-semibold hover:bg-slate-200 transition-colors"
+            disabled={isSubmitting}
+            className={`px-5 py-2.5 rounded-lg font-semibold transition-colors ${isSubmitting ? 'text-slate-400 bg-slate-100 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-200'}`}
           >
             Cancelar
           </button>
           <button 
             onClick={() => onConfirm(emailConfirmacao)}
-            className="px-5 py-2.5 rounded-lg bg-[#009A44] hover:bg-[#008A3D] text-white font-bold transition-colors shadow-sm"
+            disabled={isSubmitting}
+            className={`px-5 py-2.5 rounded-lg text-white font-bold transition-colors shadow-sm flex items-center justify-center min-w-[180px] ${isSubmitting ? 'bg-[#009A44]/70 cursor-not-allowed' : 'bg-[#009A44] hover:bg-[#008A3D]'}`}
           >
-            Concordar e Reservar
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Reservando...</span>
+              </div>
+            ) : (
+              'Concordar e Reservar'
+            )}
           </button>
         </div>
 

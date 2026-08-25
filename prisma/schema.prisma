@@ -19,13 +19,40 @@ enum ReservaStatus {
   CONCLUIDA
 }
 
+enum TimeStatus {
+  PENDENTE
+  APTO
+  INAPTO
+  SUSPENSO
+  INATIVO
+}
+
+enum MetodoConferencia {
+  ANEXOS_SISTEMA
+  CONFERENCIA_EXTERNA
+}
+
 model User {
-  id       String    @id          // CPF como PK (sem formatação)
-  name     String
-  email    String    @unique
-  password String
-  role     Role      @default(USER)
-  reservas Reserva[]
+  id              String    @id          // CPF como PK (sem formatação)
+  name            String
+  email           String    @unique
+  password        String
+  telefone        String?
+  role            Role      @default(USER)
+  reservas        Reserva[] @relation("ReservaUser")
+  reservasCriadas Reserva[] @relation("ReservaOperador")
+  timesConferidos Time[]    @relation("TimeConferidoPor")
+  pessoa          Pessoa?   @relation(fields: [pessoaId], references: [id])
+  pessoaId        String?   @unique
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
 }
 
 model Modalidade {
@@ -47,43 +74,69 @@ model Quadra {
 }
 
 model Reserva {
-  id       String        @id @default(cuid())
-  userId   String
-  quadraId String
-  timeId   String?
-  data     DateTime
-  slot     String
-  status   ReservaStatus @default(CONFIRMADA)
-  quadra   Quadra        @relation(fields: [quadraId], references: [id])
-  user     User          @relation(fields: [userId], references: [id])
-  time     Time?         @relation(fields: [timeId], references: [id])
+  id          String        @id @default(cuid())
+  userId      String?
+  operadorId  String?
+  quadraId    String
+  timeId      String?
+  data        DateTime
+  slot        String
+  status      ReservaStatus @default(CONFIRMADA)
+  emailStatus String        @default("PENDENTE")
+  cancelToken String        @default("")
+  isAdminReserva Boolean    @default(false)
+  motivo      String?
+  quadra      Quadra        @relation(fields: [quadraId], references: [id])
+  user        User?         @relation("ReservaUser", fields: [userId], references: [id])
+  operador    User?         @relation("ReservaOperador", fields: [operadorId], references: [id])
+  time        Time?         @relation(fields: [timeId], references: [id])
 
-  @@unique([data, slot, quadraId])
+  @@unique([data, slot, quadraId, cancelToken])
   @@index([quadraId, data])
 }
 
 model Time {
-  id           String             @id @default(cuid())
-  nome         String             @unique
-  responsaveis ResponsavelTime[]
-  reservas     Reserva[]
-  createdAt    DateTime           @default(now())
+  id                    String             @id @default(cuid())
+  nome                  String             @unique
+  status                TimeStatus         @default(PENDENTE)
+  conferidoPorId        String?
+  conferidoEm           DateTime?
+  metodoConferencia     MetodoConferencia?
+  observacaoConferencia String?
+  motivoInaptidao       String?
+
+  conferidoPor          User?              @relation("TimeConferidoPor", fields: [conferidoPorId], references: [id])
+  responsaveis          ResponsavelTime[]
+  reservas              Reserva[]
+  createdAt             DateTime           @default(now())
 }
 
-model ResponsavelTime {
+model Pessoa {
   id                    String   @id @default(cuid())
-  cpf                   String
+  cpf                   String   @unique
   nome                  String
-  telefone              String
+  telefone              String?
   comprovanteResidencia Boolean  @default(false)
   urlComprovante        String?
   antecedentesCriminais Boolean  @default(false)
   urlAntecedentes       String?
-  apto                  Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User?
+  responsaveisTime      ResponsavelTime[]
+}
+
+model ResponsavelTime {
+  id                    String   @id @default(cuid())
+
+  pessoaId              String
   timeId                String
+
+  pessoa                Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
   time                  Time     @relation(fields: [timeId], references: [id], onDelete: Cascade)
 
-  @@unique([cpf, timeId])
+  @@unique([pessoaId, timeId])
 }
 
 model Agenda {
