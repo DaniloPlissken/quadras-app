@@ -51,14 +51,16 @@ export function Header() {
           {/* Center: Title / Logo */}
           <div className={`flex flex-col items-center justify-center absolute left-1/2 -translate-x-1/2 ${pathname !== '/login' ? 'hidden md:flex' : ''}`}>
             {pathname === '/login' ? (
-              <Image
-                src="/logo-prefeitura-hd.png"
-                alt="Prefeitura de Uberlândia"
-                width={250}
-                height={80}
-                className="h-16 w-auto object-contain"
-                priority
-              />
+              <div className="w-48 sm:w-64">
+                <Image
+                  src="/logo-prefeitura-hd.png"
+                  alt="Prefeitura de Uberlândia"
+                  width={256}
+                  height={80}
+                  className="w-full h-auto object-contain"
+                  priority
+                />
+              </div>
             ) : (
               <h1 className="text-lg md:text-[22px] font-bold tracking-normal text-[#009A44] uppercase">
                 AGENDAMENTO DE QUADRAS

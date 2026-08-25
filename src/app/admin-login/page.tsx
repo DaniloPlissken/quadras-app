@@ -36,17 +36,20 @@ export default function AdminLoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-slate-100 relative">
       {/* Logos no topo (Admin não tem header global) */}
       <div className="absolute top-0 w-full p-6 flex justify-between items-start z-10">
+        <div className="flex gap-6 items-center">
+          <div className="flex flex-col shrink-0 z-10 w-fit text-left">
+            <span className="text-[28px] md:text-[34px] font-black text-[#009A44] leading-none">FUTEL</span>
+            <span className="text-[9px] md:text-[11px] font-medium text-[#004B87] leading-[1.2] uppercase mt-0.5">
+              FUNDAÇÃO UBERLANDENSE<br />DO TURISMO, ESPORTE E LAZER
+            </span>
+          </div>
+        </div>
         <div className="w-48 sm:w-64">
           <img 
             src="/logo-prefeitura-hd.png" 
             alt="Prefeitura de Uberlândia" 
             className="w-full h-auto object-contain"
           />
-        </div>
-        <div className="hidden md:flex gap-6 items-center">
-          <div className="text-[#005191] font-black text-3xl sm:text-4xl tracking-widest uppercase">
-            FUTEL
-          </div>
         </div>
       </div>
 
