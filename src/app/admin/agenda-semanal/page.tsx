@@ -42,7 +42,7 @@ type Reserva = {
   user?: { id: string; name: string; email: string; telefone?: string }
   time?: Time
   isAdminReserva?: boolean
-  motivo?: string
+  motivo?: string | null
 }
 
 // Utilitários de data
