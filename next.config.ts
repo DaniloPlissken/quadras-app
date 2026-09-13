@@ -35,6 +35,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Configuração para permitir acesso via rede local no modo dev
+  // @ts-ignore - Pode não estar tipado na versão exata do NextConfig que estamos usando
+  allowedDevOrigins: ['192.168.3.2'],
   poweredByHeader: false,
 
   async headers() {
