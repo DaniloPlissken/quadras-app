@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { enviarEmailRecuperacao } from '@/lib/mail';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    // Limite: 5 requisições a cada 15 minutos
+    if (!rateLimit(ip, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Muitas tentativas. Tente novamente mais tarde.' }, { status: 429 });
+    }
+
     const { cpf } = await request.json();
 
     if (!cpf) {
@@ -18,9 +25,8 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      // Por segurança, podemos retornar sucesso genérico ou um erro claro.
-      // Como o sistema é restrito, vamos retornar erro claro.
-      return NextResponse.json({ error: 'Nenhum usuário encontrado com este CPF.' }, { status: 404 });
+      // Retorna sucesso genérico para não permitir enumeração de CPFs (LGPD / Segurança)
+      return NextResponse.json({ success: true, message: 'Se o CPF estiver cadastrado, um e-mail de recuperação foi enviado.' }, { status: 200 });
     }
 
     // Apaga tokens antigos deste email se existirem
@@ -45,7 +51,8 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     await enviarEmailRecuperacao(user.email, token, baseUrl);
 
-    return NextResponse.json({ success: true, email: user.email }, { status: 200 });
+    // Retorna sucesso genérico SEM o e-mail do usuário
+    return NextResponse.json({ success: true, message: 'Se o CPF estiver cadastrado, um e-mail de recuperação foi enviado.' }, { status: 200 });
   } catch (error) {
     console.error('Erro no esqueci-senha:', error);
     return NextResponse.json({ error: 'Ocorreu um erro interno.' }, { status: 500 });

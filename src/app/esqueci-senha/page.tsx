@@ -12,7 +12,7 @@ import { KeyRound, ArrowLeft } from 'lucide-react';
 export default function EsqueciSenhaPage() {
   const [cpf, setCpf] = useState('');
   const [loading, setLoading] = useState(false);
-  const [emailEnviado, setEmailEnviado] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState(false);
 
   const handleMascaraCPF = (value: string) => {
     return value
@@ -40,8 +40,8 @@ export default function EsqueciSenhaPage() {
         throw new Error(data.error || 'Erro ao solicitar recuperação.');
       }
 
-      setEmailEnviado(data.email);
-      toast.success('Link de recuperação enviado com sucesso!');
+      setSucesso(true);
+      toast.success(data.message || 'Solicitação enviada!');
     } catch (err: unknown) {
       toast.error((err instanceof Error ? err.message : '') || 'Erro ao processar solicitação.');
     } finally {
@@ -60,21 +60,19 @@ export default function EsqueciSenhaPage() {
           </div>
           <CardTitle className="text-2xl font-bold text-slate-800">Recuperar Senha</CardTitle>
           <CardDescription>
-            {emailEnviado 
+            {sucesso 
               ? 'Verifique sua caixa de entrada.' 
               : 'Informe seu CPF para receber o link de redefinição.'}
           </CardDescription>
         </CardHeader>
         
         <CardContent>
-          {emailEnviado ? (
+          {sucesso ? (
             <div className="text-center space-y-4">
               <p className="text-slate-600 text-sm">
-                Enviamos um link de recuperação para o e-mail:
-                <br />
-                <strong className="text-slate-900 mt-2 block">{emailEnviado}</strong>
+                Se o CPF estiver cadastrado, enviamos um link de recuperação de senha para o e-mail associado à conta.
               </p>
-              <p className="text-slate-500 text-xs">
+              <p className="text-slate-500 text-xs mt-4">
                 O link expira em 1 hora. Não esqueça de checar sua caixa de spam ou lixeira.
               </p>
             </div>

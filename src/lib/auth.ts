@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,7 +13,14 @@ export const authOptions: NextAuthOptions = {
         email: { label: "E-mail", type: "text" },
         password: { label: "Senha", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        // Tenta pegar o IP através dos headers passados na requisição
+        const ip = req?.headers?.["x-forwarded-for"] || "127.0.0.1";
+        
+        if (!rateLimit(ip, 5, 15 * 60 * 1000)) { // 5 tentativas em 15 minutos
+          throw new Error("Muitas tentativas. Tente novamente mais tarde.");
+        }
+
         if ((!credentials?.cpf && !credentials?.email) || !credentials?.password) {
           throw new Error("Credenciais inválidas");
         }

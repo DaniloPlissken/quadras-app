@@ -74,16 +74,6 @@ npm run dev
 
 ---
 
-## 🔒 Acesso e Credenciais de Teste
-
-Para agilizar os testes no painel administrativo ou fluxos públicos:
-
-| Perfil | Identificador (Login) | Senha | Acesso |
-| :--- | :--- | :--- | :--- |
-| **Administrador** | `admin@futel.mg.gov.br` (Email) | `123456` | Rota: `/admin-login` |
-| **Cidadão / Usuário Teste** | `12345678900` (CPF) | `123456` | Rota: `/login` |
-
----
 
 ## 📋 Qualidade e Build
 
