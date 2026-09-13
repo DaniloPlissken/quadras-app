@@ -109,7 +109,9 @@ export async function PATCH(request: Request) {
       },
       include: {
         user: true,
-        quadra: true
+        quadra: {
+          include: { modalidade: true }
+        }
       }
     })
 
@@ -124,7 +126,7 @@ export async function PATCH(request: Request) {
           await enviarEmailCancelamentoAdmin(
             reserva.user.email,
             reserva.user.name,
-            reserva.quadra.nome,
+            `${reserva.quadra.nome} (${reserva.quadra.modalidade.nome})`,
             formatShort(reserva.data),
             reserva.slot,
             motivoEnvio

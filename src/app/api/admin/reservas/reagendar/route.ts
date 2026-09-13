@@ -55,7 +55,9 @@ export async function PUT(req: Request) {
       where: { id: reservaId },
       include: {
         user: true,
-        quadra: true,
+        quadra: {
+          include: { modalidade: true }
+        },
         time: true
       }
     })
@@ -173,7 +175,7 @@ export async function PUT(req: Request) {
         await enviarEmailReagendamento(
           reservaOriginal.user.email,
           reservaOriginal.user.name || 'Cidadão',
-          reservaOriginal.quadra.nome,
+          `${reservaOriginal.quadra.nome} (${reservaOriginal.quadra.modalidade.nome})`,
           dataAntigaStr,
           horarioAntigo,
           formatShort(dataReserva),

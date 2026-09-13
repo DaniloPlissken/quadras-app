@@ -233,7 +233,7 @@ export async function POST(req: Request) {
         await enviarEmailConfirmacao(
           emailConfirmacao,
           reserva.user?.name || 'Cidadão',
-          quadra.nome,
+          `${quadra.nome} (${quadra.modalidade.nome})`,
           formatShort(dataReserva),
           slot
         );
