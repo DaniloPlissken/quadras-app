@@ -77,7 +77,11 @@ const SLOTS_FUTEBOL_DOM = [
 export default function AdminCalendarioPage() {
   const [quadras, setQuadras] = useState<Quadra[]>([])
   const [quadraId, setQuadraId] = useState('')
-  const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>(new Date())
+  const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>()
+
+  useEffect(() => {
+    setDataSelecionada(new Date())
+  }, [])
   const [agendas, setAgendas] = useState<Agenda[]>([])
   
   const [isFetchingAgendas, setIsFetchingAgendas] = useState(false)

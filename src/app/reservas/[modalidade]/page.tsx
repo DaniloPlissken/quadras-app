@@ -68,7 +68,11 @@ export default function ReservaModalidadePage() {
   const modalidade = String(params.modalidade)
   const { data: session, status } = useSession()
 
-  const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>(new Date())
+  const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>()
+
+  useEffect(() => {
+    setDataSelecionada(new Date())
+  }, [])
 
   const [quadras, setQuadras] = useState<Quadra[]>([])
   const [quadraId, setQuadraId] = useState('')

@@ -45,7 +45,11 @@ export default function AdminReservaFutebolPage() {
 
   const [quadraId, setQuadraId] = useState('')
   const [timeId, setTimeId] = useState('')
-  const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>(new Date())
+  const [dataSelecionada, setDataSelecionada] = useState<Date | undefined>()
+
+  useEffect(() => {
+    setDataSelecionada(new Date())
+  }, [])
   const [slotSelecionado, setSlotSelecionado] = useState<string | null>(null)
   
   const [isFetchingAgendas, setIsFetchingAgendas] = useState(false)
