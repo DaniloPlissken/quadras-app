@@ -97,11 +97,17 @@ export async function runDemoSeedAction() {
     throw new Error('Nenhuma quadra encontrada. Certifique-se de rodar o seed base localmente.');
   }
 
-  const hoje = startOfDay(new Date());
-  let diasParaSabado = 6 - getDay(hoje);
+  const hoje = new Date();
+  const hojeUTC = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate()));
+  let diasParaSabado = 6 - hojeUTC.getUTCDay();
   if (diasParaSabado <= 0) diasParaSabado += 7; 
-  const sabado = addDays(hoje, diasParaSabado);
-  const domingo = addDays(sabado, 1);
+  
+  const sabado = new Date(hojeUTC);
+  sabado.setUTCDate(sabado.getUTCDate() + diasParaSabado);
+  
+  const domingo = new Date(sabado);
+  domingo.setUTCDate(domingo.getUTCDate() + 1);
+  
   const datasFinalSemana = [sabado, domingo];
 
   const cpfsUsados = new Set<string>();
