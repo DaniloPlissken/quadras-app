@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { addDays, startOfDay, getDay } from "date-fns";
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
 async function verifyAdmin() {
   const session = await getServerSession(authOptions);
@@ -49,33 +50,34 @@ const SLOTS_FUTEBOL_DOM = [
 export async function cleanDatabaseAction() {
   await verifyAdmin();
 
-  await prisma.passwordResetToken.deleteMany();
-  await prisma.reserva.deleteMany();
-  await prisma.agenda.deleteMany();
-  await prisma.responsavelTime.deleteMany();
-  await prisma.time.deleteMany();
+  // Executando deleções primárias em transação para maior performance
+  await prisma.$transaction([
+    prisma.passwordResetToken.deleteMany(),
+    prisma.reserva.deleteMany(),
+    prisma.agenda.deleteMany(),
+    prisma.responsavelTime.deleteMany(),
+    prisma.time.deleteMany(),
+  ]);
 
   // Preservar Admin e cidadao teste
-  await prisma.user.deleteMany({
-    where: {
-      email: {
-        notIn: ['admin@futel.mg.gov.br', 'cidadao@teste.com']
-      }
-    }
-  });
-
+  const usersToKeep = ['teste.admin@futel.mg.gov.br', 'teste.cidadao@futel.mg.gov.br'];
+  
   const remainingUsers = await prisma.user.findMany({
-    where: { pessoaId: { not: null } },
+    where: { pessoaId: { not: null }, email: { in: usersToKeep } },
     select: { pessoaId: true }
   });
   
+  await prisma.user.deleteMany({
+    where: {
+      email: { notIn: usersToKeep }
+    }
+  });
+
   const keepPessoaIds = remainingUsers.map(u => u.pessoaId).filter(Boolean) as string[];
 
   if (keepPessoaIds.length > 0) {
     await prisma.pessoa.deleteMany({
-      where: {
-        id: { notIn: keepPessoaIds }
-      }
+      where: { id: { notIn: keepPessoaIds } }
     });
   } else {
     await prisma.pessoa.deleteMany();
@@ -89,34 +91,8 @@ export async function runDemoSeedAction() {
   await verifyAdmin();
 
   const pwd = await bcrypt.hash('123456', 10);
-  
-  // Garantir a recriação do admin e teste se alguém os deletou manualmente
-  await prisma.user.upsert({
-    where: { email: 'admin@futel.mg.gov.br' },
-    update: {},
-    create: {
-      id: 'admin',
-      name: 'Admin FUTEL',
-      email: 'admin@futel.mg.gov.br',
-      password: pwd,
-      role: 'ADMIN',
-    }
-  });
-
-  await prisma.user.upsert({
-    where: { email: 'cidadao@teste.com' },
-    update: {},
-    create: {
-      id: '12345678900',
-      name: 'Cidadão / Usuário Teste',
-      email: 'cidadao@teste.com',
-      password: pwd,
-      role: 'USER',
-      telefone: '34999999999',
-    }
-  });
-
   const quadras = await prisma.quadra.findMany({ include: { modalidade: true } });
+  
   if (quadras.length === 0) {
     throw new Error('Nenhuma quadra encontrada. Certifique-se de rodar o seed base localmente.');
   }
@@ -128,43 +104,52 @@ export async function runDemoSeedAction() {
   const domingo = addDays(sabado, 1);
   const datasFinalSemana = [sabado, domingo];
 
-  const timesCriados = [];
   const cpfsUsados = new Set<string>();
 
+  // Estruturas de dados em memória para inserção em lote (bulk insert)
+  const timesData: any[] = [];
+  const pessoasData: any[] = [];
+  const responsaveisData: any[] = [];
+  const agendasData: any[] = [];
+  const usersData: any[] = [];
+  const reservasData: any[] = [];
+
+  const timesCriados = [];
+
+  // Gerar dados dos times
   for (let i = 1; i <= 20; i++) {
     const nomeTime = `Time Teste FC ${i}`;
-    const time = await prisma.time.upsert({
-      where: { nome: nomeTime },
-      update: {},
-      create: {
-        nome: nomeTime,
-        status: 'APTO',
-      }
-    });
-    timesCriados.push(time);
+    const timeId = crypto.randomUUID();
+    
+    timesData.push({ id: timeId, nome: nomeTime, status: 'APTO' });
+    timesCriados.push({ id: timeId, nome: nomeTime });
     
     for(let j = 1; j <= 2; j++) {
       let cpfResp = gerarCpfValido();
       while(cpfsUsados.has(cpfResp)) cpfResp = gerarCpfValido();
       cpfsUsados.add(cpfResp);
       
-      const p = await prisma.pessoa.create({
-        data: {
-          cpf: cpfResp,
-          nome: `Responsável ${j} do Time ${i}`,
-          telefone: `349999999${(i * j) % 10}`,
-          comprovanteResidencia: true,
-          antecedentesCriminais: true,
-        }
+      const pessoaId = crypto.randomUUID();
+      pessoasData.push({
+        id: pessoaId,
+        cpf: cpfResp,
+        nome: `Responsável ${j} do Time ${i}`,
+        telefone: `349999999${(i * j) % 10}`,
+        comprovanteResidencia: true,
+        antecedentesCriminais: true,
       });
-      await prisma.responsavelTime.create({
-        data: { pessoaId: p.id, timeId: time.id }
+      
+      responsaveisData.push({
+        id: crypto.randomUUID(),
+        pessoaId: pessoaId,
+        timeId: timeId
       });
     }
   }
 
   let totalReservas = 0;
   
+  // Gerar dados de agendas e reservas
   for (const quadra of quadras) {
     const isTenis = quadra.modalidade.nome.toLowerCase() === 'tênis';
     const isFutebol = quadra.modalidade.nome.toLowerCase() === 'futebol';
@@ -177,14 +162,11 @@ export async function runDemoSeedAction() {
         else if (data.getDay() === 0) slots = SLOTS_FUTEBOL_DOM;
       }
 
-      await prisma.agenda.upsert({
-        where: { data_quadraId: { data, quadraId: quadra.id } },
-        update: {},
-        create: {
-          data,
-          quadraId: quadra.id,
-          horarios: slots,
-        }
+      agendasData.push({
+        id: crypto.randomUUID(),
+        data,
+        quadraId: quadra.id,
+        horarios: slots,
       });
 
       for (const slot of slots) {
@@ -192,15 +174,13 @@ export async function runDemoSeedAction() {
         while(cpfsUsados.has(cpfUnico)) cpfUnico = gerarCpfValido();
         cpfsUsados.add(cpfUnico);
 
-        const userUnico = await prisma.user.create({
-          data: {
-            id: cpfUnico,
-            name: `Usuário ${totalReservas + 1}`,
-            email: `teste${totalReservas + 1}@futel.mg.gov.br`,
-            password: pwd,
-            telefone: `34999999999`,
-            role: 'USER',
-          }
+        usersData.push({
+          id: cpfUnico,
+          name: `Usuário ${totalReservas + 1}`,
+          email: `teste${totalReservas + 1}@futel.mg.gov.br`,
+          password: pwd,
+          telefone: `34999999999`,
+          role: 'USER',
         });
 
         let timeId = null;
@@ -208,23 +188,31 @@ export async function runDemoSeedAction() {
           timeId = timesCriados[totalReservas % timesCriados.length].id;
         }
 
-        await prisma.reserva.upsert({
-          where: { data_slot_quadraId_cancelToken: { data, slot, quadraId: quadra.id, cancelToken: '' } },
-          update: {},
-          create: {
-            userId: userUnico.id,
-            quadraId: quadra.id,
-            data,
-            slot,
-            status: 'CONFIRMADA',
-            timeId,
-          }
+        reservasData.push({
+          id: crypto.randomUUID(),
+          userId: cpfUnico,
+          quadraId: quadra.id,
+          data,
+          slot,
+          status: 'CONFIRMADA',
+          timeId,
+          cancelToken: '',
         });
         totalReservas++;
       }
     }
   }
 
+  // Executar todas as inserções em lote em uma única transação super rápida
+  await prisma.$transaction([
+    prisma.time.createMany({ data: timesData, skipDuplicates: true }),
+    prisma.pessoa.createMany({ data: pessoasData, skipDuplicates: true }),
+    prisma.responsavelTime.createMany({ data: responsaveisData, skipDuplicates: true }),
+    prisma.agenda.createMany({ data: agendasData, skipDuplicates: true }),
+    prisma.user.createMany({ data: usersData, skipDuplicates: true }),
+    prisma.reserva.createMany({ data: reservasData, skipDuplicates: true }),
+  ]);
+
   revalidatePath("/", "layout");
-  return { success: true, message: `Seed finalizado! ${totalReservas} reservas criadas no FDS.` };
+  return { success: true, message: `Seed super rápido finalizado! ${totalReservas} reservas criadas no FDS.` };
 }

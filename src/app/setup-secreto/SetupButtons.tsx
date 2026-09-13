@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { cleanDatabaseAction, runDemoSeedAction } from "./actions";
 
 export function SetupButtons() {
@@ -9,12 +10,13 @@ export function SetupButtons() {
 
   const handleClean = () => {
     if (window.confirm("CUIDADO: Isso apagará todas as reservas, times e pessoas! Quer mesmo continuar?")) {
+      const toastId = toast.loading("Limpando banco de dados, aguarde...");
       startTransition(async () => {
         try {
           const res = await cleanDatabaseAction();
-          if (res.success) toast.success(res.message);
+          if (res.success) toast.success(res.message, { id: toastId });
         } catch (error: any) {
-          toast.error(error.message || "Erro ao limpar o banco");
+          toast.error(error.message || "Erro ao limpar o banco", { id: toastId });
         }
       });
     }
@@ -22,12 +24,13 @@ export function SetupButtons() {
 
   const handleSeed = () => {
     if (window.confirm("Isso irá gerar 20 times e lotar as quadras no próximo final de semana. Continuar?")) {
+      const toastId = toast.loading("Gerando times e reservas, isso pode levar alguns segundos...");
       startTransition(async () => {
         try {
           const res = await runDemoSeedAction();
-          if (res.success) toast.success(res.message);
+          if (res.success) toast.success(res.message, { id: toastId });
         } catch (error: any) {
-          toast.error(error.message || "Erro ao rodar seed");
+          toast.error(error.message || "Erro ao rodar seed", { id: toastId });
         }
       });
     }
@@ -43,9 +46,16 @@ export function SetupButtons() {
         <button 
           onClick={handleClean}
           disabled={isPending}
-          className="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors cursor-pointer"
+          className="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50 text-white font-medium rounded-lg transition-colors cursor-pointer"
         >
-          {isPending ? "Processando..." : "Limpar Banco"}
+          {isPending ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Limpando...
+            </>
+          ) : (
+            "Limpar Banco"
+          )}
         </button>
       </div>
 
@@ -57,9 +67,16 @@ export function SetupButtons() {
         <button 
           onClick={handleSeed}
           disabled={isPending}
-          className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors cursor-pointer"
+          className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-2 disabled:opacity-50 text-white font-medium rounded-lg transition-colors cursor-pointer"
         >
-          {isPending ? "Processando..." : "Rodar Seed"}
+          {isPending ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Populando...
+            </>
+          ) : (
+            "Rodar Seed"
+          )}
         </button>
       </div>
     </div>
